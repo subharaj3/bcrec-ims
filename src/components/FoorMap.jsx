@@ -21,7 +21,7 @@ const FloorMap = () => {
             <div className="absolute top-6 z-50 bg-white/90 backdrop-blur px-6 py-2 rounded-full shadow-xl border border-gray-200 flex items-center gap-2">
                 <Info size={18} className="text-blue-600" />
                 <div>
-                    <h1 className="font-bold text-gray-800 text-sm">Campus Map - Third Floor</h1>
+                    <h1 className="font-bold text-gray-800 text-sm">Computer Science Building - Third Floor</h1>
                     <p className="text-[10px] text-gray-500 uppercase tracking-wider">Scroll to Zoom • Drag to Pan</p>
                 </div>
             </div>
