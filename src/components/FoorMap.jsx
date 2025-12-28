@@ -3,7 +3,7 @@ import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import { Info } from "lucide-react";
 import { RoomData } from "../utils/RoomData";
 
-const FloorMap = () => {
+const FloorMap = ({ onRoomSelect }) => {
     const MAP_WIDTH = 1549;
     const MAP_HEIGHT = 2200;
 
@@ -11,8 +11,11 @@ const FloorMap = () => {
 
     const handleRoomClick = (room) => {
         console.log("Clicked:", room.label);
-        setActiveRoom(room.id);
-        alert(`You clicked: ${room.label}`);
+        // setActiveRoom(room.id);
+        // alert(`You clicked: ${room.label}`);
+        if (onRoomSelect) {
+            onRoomSelect(room);
+        }
     };
 
     return (
