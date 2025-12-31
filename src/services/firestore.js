@@ -107,3 +107,28 @@ export const getMapLayout = async () => {
         return null;
     }
 };
+
+// Listen to Global Heatmaps (Active Tickets Only)
+export const subscribeToHeatmap = (callback) => {
+  // We want to count 'open' tickets. 
+  // (You can include 'in-progress' if you want those to show red too)
+  const q = query(
+    collection(db, "tickets"), 
+    where("status", "==", "open")
+  );
+
+  return onSnapshot(q, (snapshot) => {
+    const counts = {};
+    
+    snapshot.docs.forEach(doc => {
+      const data = doc.data();
+      if (data.roomId) {
+        // Increment count for this room
+        counts[data.roomId] = (counts[data.roomId] || 0) + 1;
+      }
+    });
+    
+    callback(counts);
+  });
+};
+
