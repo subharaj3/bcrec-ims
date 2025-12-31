@@ -38,8 +38,8 @@ export const RoomData = [
     {
         id: "washrooms",
         label: "Ladies WC Left Wing",
-        x: 52,
-        y: 192,
+        x: 48,
+        y: 191,
         width: 150,
         height: 130,
         color: "green",
@@ -47,7 +47,7 @@ export const RoomData = [
     {
         id: "cyber-lab",
         label: "Cyber Security Lab 02",
-        x: 51,
+        x: 47,
         y: 399,
         width: 224,
         height: 150,
@@ -56,7 +56,7 @@ export const RoomData = [
     {
         id: "TF-223",
         label: "Room TF-223",
-        x: 49,
+        x: 44,
         y: 551,
         width: 227,
         height: 291,
@@ -65,8 +65,8 @@ export const RoomData = [
     {
         id: "left-room-1",
         label: "Unlabeled Room 1",
-        x: 47,
-        y: 842,
+        x: 43,
+        y: 843,
         width: 230,
         height: 290,
     },
@@ -98,7 +98,7 @@ export const RoomData = [
     {
         id: "aiml-lab",
         label: "AI/ML Lab 02",
-        x: 501,
+        x: 496,
         y: 1368,
         width: 197,
         height: 321,
@@ -107,8 +107,8 @@ export const RoomData = [
     {
         id: "TF-08",
         label: "Room TF-08",
-        x: 695,
-        y: 1366,
+        x: 693,
+        y: 1368,
         width: 197,
         height: 324,
         color: "red",

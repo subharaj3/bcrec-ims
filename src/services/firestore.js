@@ -8,11 +8,12 @@ import {
     orderBy,
     updateDoc,
     doc,
+    getDoc,
+    setDoc,
     arrayUnion,
     arrayRemove,
     serverTimestamp,
 } from "firebase/firestore";
-
 
 // CREATE A NEW TICKET
 export const createTicket = async (ticketData, user) => {
@@ -71,5 +72,38 @@ export const toggleUpvote = async (ticketId, userId, currentUpvotes) => {
             upvotes: arrayUnion(userId),
             voteCount: currentUpvotes.length + 1,
         });
+    }
+};
+
+// MAP EDITOR FUNCTIONS
+// Save Room Layout (Admin only)
+export const saveMapLayout = async (rooms) => {
+    try {
+        // We overwrite the 'rooms' array in the 'main-campus' doc
+        await setDoc(doc(db, "maps", "main-campus"), {
+            rooms: rooms,
+            lastUpdated: serverTimestamp(),
+        });
+        console.log("Map layout saved!");
+    } catch (error) {
+        console.error("Error saving map:", error);
+        throw error;
+    }
+};
+
+// Fetch Room Layout (For app & editor)
+export const getMapLayout = async () => {
+    try {
+        const docRef = doc(db, "maps", "main-campus");
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+            return docSnap.data().rooms;
+        } else {
+            return null; // No map saved yet
+        }
+    } catch (error) {
+        console.error("Error fetching map:", error);
+        return null;
     }
 };
