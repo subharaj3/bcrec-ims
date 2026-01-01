@@ -154,3 +154,22 @@ export const subscribeToHeatmap = (callback) => {
     callback(counts);
   });
 };
+
+// ... existing code ...
+
+// 8. UPDATE TICKET STATUS (Staff/Admin)
+export const updateTicketStatus = async (ticketId, updates) => {
+  try {
+    const ticketRef = doc(db, "tickets", ticketId);
+
+    // Updates object will contain: { status, staffNote, resolutionImageUrl, etc. }
+    await updateDoc(ticketRef, {
+      ...updates,
+      lastUpdated: serverTimestamp(),
+    });
+    console.log("Ticket updated by staff");
+  } catch (error) {
+    console.error("Error updating ticket:", error);
+    throw error;
+  }
+};
