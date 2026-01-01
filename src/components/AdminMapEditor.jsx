@@ -68,7 +68,14 @@ const AdminMapEditor = () => {
     };
 
     const handleMetaUpdate = (key, value) => {
+        // 1. Update the specific room in the array
         setRects(rects.map(r => r.id === selectedId ? { ...r, [key]: value } : r));
+
+        // 2. CRITICAL FIX: If we just changed the ID, update the selection state too!
+        // Otherwise, selectedId points to a ghost room, causing the crash.
+        if (key === 'id') {
+            setSelectedId(value);
+        }
     };
 
     const deleteRoom = () => {
@@ -97,7 +104,7 @@ const AdminMapEditor = () => {
                             <Plus size={16} /> Add Room
                         </button>
 
-                        {selectedId ? (
+                        {selectedRect ? (
                             <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 space-y-3 animate-fade-in">
                                 <h3 className="text-xs font-bold text-gray-400 uppercase">Edit Properties</h3>
 
@@ -115,6 +122,7 @@ const AdminMapEditor = () => {
                                         <option value="blue">Blue (Lab/Hall)</option>
                                         <option value="red">Red (Classroom)</option>
                                         <option value="green">Green (Utility)</option>
+                                        <option value="green">Others </option>
                                     </select>
                                 </div>
 
