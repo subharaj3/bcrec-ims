@@ -1,15 +1,15 @@
-import React, { useState, useEffect } from "react";
-import { Rnd } from "react-rnd";
-import { Plus, Trash2, Save, RotateCcw, Loader2 } from "lucide-react";
-import { RoomData as fallbackData } from "../utils/RoomData";
-import { saveMapLayout, getMapLayout } from "../services/firestore"; // Import new functions
+import React, { useState, useEffect } from 'react';
+import { Rnd } from 'react-rnd';
+import { Plus, Trash2, Save, Copy, Loader2 } from 'lucide-react'; // Added 'Copy' back
+import { RoomData as fallbackData } from '../utils/RoomData';
+import { saveMapLayout, getMapLayout } from '../services/firestore';
 
 const AdminMapEditor = () => {
     const MAP_WIDTH = 1549;
     const MAP_HEIGHT = 2200;
 
     // State
-    const [rects, setRects] = useState([]); // Start empty, fetch on mount
+    const [rects, setRects] = useState([]);
     const [selectedId, setSelectedId] = useState(null);
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
@@ -19,28 +19,35 @@ const AdminMapEditor = () => {
         const loadData = async () => {
             const dbRooms = await getMapLayout();
             if (dbRooms && dbRooms.length > 0) {
-                setRects(dbRooms); // Use Database Data
+                setRects(dbRooms);
             } else {
-                setRects(fallbackData); // Use Local File (First time setup)
+                setRects(fallbackData);
             }
             setLoading(false);
         };
         loadData();
     }, []);
 
-    const selectedRect = rects.find((r) => r.id === selectedId);
+    const selectedRect = rects.find(r => r.id === selectedId);
 
     // 2. SAVE TO FIREBASE
     const handleSave = async () => {
         setSaving(true);
         try {
             await saveMapLayout(rects);
-            alert("Map Layout Updated in Database!");
+            alert("✅ Map Layout Updated in Database!");
         } catch (error) {
-            alert("Failed to save map. Check console.");
+            alert("❌ Failed to save map. Check console.");
         } finally {
             setSaving(false);
         }
+    };
+
+    // 3. COPY TO CLIPBOARD (Backup Feature)
+    const copyToClipboard = () => {
+        const output = `export const RoomData = ${JSON.stringify(rects, null, 2)};`;
+        navigator.clipboard.writeText(output);
+        alert("📋 Copied Array to Clipboard! Paste this into src/utils/RoomData.js");
     };
 
     // --- STANDARD EDITOR FUNCTIONS ---
@@ -49,38 +56,31 @@ const AdminMapEditor = () => {
         const newRoom = {
             id: newId,
             label: "New Room",
-            x: 100,
-            y: 100,
-            width: 150,
-            height: 100,
-            color: "blue",
+            x: 100, y: 100, width: 150, height: 100,
+            color: "blue"
         };
         setRects([...rects, newRoom]);
         setSelectedId(newId);
     };
 
     const handleUpdate = (id, d) => {
-        setRects(rects.map((r) => (r.id === id ? { ...r, ...d } : r)));
+        setRects(rects.map(r => r.id === id ? { ...r, ...d } : r));
     };
 
     const handleMetaUpdate = (key, value) => {
-        setRects(rects.map((r) => (r.id === selectedId ? { ...r, [key]: value } : r)));
+        setRects(rects.map(r => r.id === selectedId ? { ...r, [key]: value } : r));
     };
 
     const deleteRoom = () => {
-        setRects(rects.filter((r) => r.id !== selectedId));
+        setRects(rects.filter(r => r.id !== selectedId));
         setSelectedId(null);
     };
 
-    if (loading)
-        return (
-            <div className="h-full flex items-center justify-center">
-                <Loader2 className="animate-spin" /> Loading Map Data...
-            </div>
-        );
+    if (loading) return <div className="h-full flex items-center justify-center"><Loader2 className="animate-spin" /> Loading Map Data...</div>;
 
     return (
         <div className="flex h-screen w-screen overflow-hidden bg-gray-100">
+
             {/* SIDEBAR */}
             <div className="w-80 bg-white shadow-xl z-20 flex flex-col border-r border-gray-200">
                 <div className="p-4 border-b border-gray-100 bg-gray-50">
@@ -103,37 +103,22 @@ const AdminMapEditor = () => {
 
                                 <div>
                                     <label className="text-xs font-bold text-gray-700">ID (Unique)</label>
-                                    <input
-                                        className="w-full p-1 border rounded text-sm font-mono"
-                                        value={selectedRect.id}
-                                        onChange={(e) => handleMetaUpdate("id", e.target.value)}
-                                    />
+                                    <input className="w-full p-1 border rounded text-sm font-mono" value={selectedRect.id} onChange={(e) => handleMetaUpdate('id', e.target.value)} />
                                 </div>
                                 <div>
                                     <label className="text-xs font-bold text-gray-700">Label (Visible)</label>
-                                    <input
-                                        className="w-full p-1 border rounded text-sm"
-                                        value={selectedRect.label}
-                                        onChange={(e) => handleMetaUpdate("label", e.target.value)}
-                                    />
+                                    <input className="w-full p-1 border rounded text-sm" value={selectedRect.label} onChange={(e) => handleMetaUpdate('label', e.target.value)} />
                                 </div>
                                 <div>
                                     <label className="text-xs font-bold text-gray-700">Color Type</label>
-                                    <select
-                                        className="w-full p-1 border rounded text-sm"
-                                        value={selectedRect.color || "blue"}
-                                        onChange={(e) => handleMetaUpdate("color", e.target.value)}
-                                    >
+                                    <select className="w-full p-1 border rounded text-sm" value={selectedRect.color || 'blue'} onChange={(e) => handleMetaUpdate('color', e.target.value)}>
                                         <option value="blue">Blue (Lab/Hall)</option>
                                         <option value="red">Red (Classroom)</option>
                                         <option value="green">Green (Utility)</option>
                                     </select>
                                 </div>
 
-                                <button
-                                    onClick={deleteRoom}
-                                    className="w-full py-1 bg-red-100 text-red-600 hover:bg-red-200 rounded flex items-center justify-center gap-1 text-xs font-bold mt-2"
-                                >
+                                <button onClick={deleteRoom} className="w-full py-1 bg-red-100 text-red-600 hover:bg-red-200 rounded flex items-center justify-center gap-1 text-xs font-bold mt-2">
                                     <Trash2 size={12} /> Delete
                                 </button>
                             </div>
@@ -145,8 +130,9 @@ const AdminMapEditor = () => {
                     </div>
                 </div>
 
-                {/* SAVE BUTTON AREA */}
-                <div className="p-4 border-t border-gray-200 bg-gray-50">
+                {/* SAVE & COPY AREA */}
+                <div className="p-4 border-t border-gray-200 bg-gray-50 space-y-3">
+                    {/* Primary Action: Save to DB */}
                     <button
                         onClick={handleSave}
                         disabled={saving}
@@ -155,17 +141,21 @@ const AdminMapEditor = () => {
                         {saving ? <Loader2 className="animate-spin" /> : <Save size={18} />}
                         {saving ? "Saving..." : "Update Live Map"}
                     </button>
+
+                    {/* Secondary Action: Copy to Clipboard */}
+                    <button
+                        onClick={copyToClipboard}
+                        className="w-full py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-xs font-bold flex items-center justify-center gap-2"
+                    >
+                        <Copy size={14} /> Copy Code for Backup
+                    </button>
                 </div>
             </div>
 
             {/* MAP CANVAS */}
             <div className="flex-1 overflow-auto relative bg-gray-500 p-10 cursor-crosshair">
                 <div className="relative bg-white shadow-2xl mx-auto" style={{ width: MAP_WIDTH, height: MAP_HEIGHT }}>
-                    <img
-                        src="/Floor3.jpg"
-                        className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-50 select-none"
-                        alt="Reference"
-                    />
+                    <img src="/Floor3.jpg" className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-50 select-none" alt="Reference" />
 
                     {rects.map((room) => (
                         <Rnd
@@ -174,19 +164,9 @@ const AdminMapEditor = () => {
                             position={{ x: room.x, y: room.y }}
                             bounds="parent"
                             onDragStop={(e, d) => handleUpdate(room.id, { x: d.x, y: d.y })}
-                            onResizeStop={(e, dir, ref, delta, pos) =>
-                                handleUpdate(room.id, {
-                                    width: parseInt(ref.style.width),
-                                    height: parseInt(ref.style.height),
-                                    ...pos,
-                                })
-                            }
+                            onResizeStop={(e, dir, ref, delta, pos) => handleUpdate(room.id, { width: parseInt(ref.style.width), height: parseInt(ref.style.height), ...pos })}
                             onClick={() => setSelectedId(room.id)}
-                            className={`border-2 flex items-center justify-center group ${
-                                selectedId === room.id
-                                    ? "border-blue-600 bg-blue-500/30 z-50"
-                                    : "border-red-500 bg-red-500/20"
-                            }`}
+                            className={`border-2 flex items-center justify-center group ${selectedId === room.id ? 'border-blue-600 bg-blue-500/30 z-50' : 'border-red-500 bg-red-500/20'}`}
                         >
                             <span className="text-[10px] font-bold text-black bg-white/80 px-1 rounded pointer-events-none truncate max-w-full">
                                 {room.label || room.id}
