@@ -1,19 +1,19 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { auth, googleProvider, db } from "../services/firebase";
 import { signInWithPopup, signOut, onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
-    const [role, setRole] = useState(null);
+    const [user, setUser] = useState(null); // Auth User (Google)
+    const [userData, setUserData] = useState(null); // DB User (Firestore Data)
     const [loading, setLoading] = useState(true);
 
-    // Create/Fetch User Document
-    const handleUserRole = async (currentUser) => {
+    // 1. SYNC USER WITH FIRESTORE
+    const syncUserWithDb = async (currentUser) => {
         if (!currentUser) {
-            setRole(null);
+            setUserData(null);
             return;
         }
 
@@ -21,52 +21,72 @@ export const AuthProvider = ({ children }) => {
         const userSnap = await getDoc(userRef);
 
         if (userSnap.exists()) {
-            // User exists, get their role
-            setRole(userSnap.data().role);
+            // User exists -> Load their data
+            setUserData(userSnap.data());
         } else {
-            // New user! Create them as "student"
-            const defaultRole = "student";
-            await setDoc(userRef, {
+            // New User -> Create default doc (Profile Incomplete)
+            const newUserData = {
+                uid: currentUser.uid,
                 email: currentUser.email,
-                role: defaultRole,
-                createdAt: new Date(),
                 name: currentUser.displayName,
                 photoURL: currentUser.photoURL,
-            });
-            setRole(defaultRole);
+                role: "student",
+                isProfileComplete: false,
+                createdAt: new Date(),
+            };
+            await setDoc(userRef, newUserData);
+            setUserData(newUserData);
         }
     };
 
-    // Login Function
+    // 2. FUNCTION TO COMPLETE PROFILE
+    const completeProfile = async (profileData) => {
+        if (!user) return;
+
+        const updates = {
+            ...profileData, // rollNumber, course, stream
+            isProfileComplete: true,
+        };
+
+        // Update DB
+        await updateDoc(doc(db, "users", user.uid), updates);
+
+        // Update Local State (Instant UI update)
+        setUserData((prev) => ({ ...prev, ...updates }));
+    };
+
     const login = async () => {
-        const result = await signInWithPopup(auth, googleProvider);
+        try {
+            await signInWithPopup(auth, googleProvider);
+        } catch (error) {
+            console.error("Login failed", error);
+        }
     };
 
-    // Logout Function
-    const logout = () => {
-        setRole(null);
-        return signOut(auth);
+    const logout = async () => {
+        setUserData(null);
+        await signOut(auth);
     };
 
-    // Check if user is logged in automatically
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
             setUser(currentUser);
-            if (currentUser) {
-                await handleUserRole(currentUser);
-            } else {
-                setRole(null);
-            }
+            await syncUserWithDb(currentUser);
             setLoading(false);
-            console.log("User status changed:", currentUser);
         });
         return () => unsubscribe();
     }, []);
 
-    const value = { user, role, login, logout, loading };
+    const value = {
+        user,
+        userData, // Contains role, rollNumber, isProfileComplete
+        login,
+        logout,
+        completeProfile, // Export this so the form can use it
+        loading,
+    };
 
     return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>;
 };
 
-// Custom Hook for easy access
 export const useAuth = () => useContext(AuthContext);

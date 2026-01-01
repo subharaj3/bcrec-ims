@@ -10,8 +10,7 @@ import {
     ShieldAlert,
     Ban,
     Info,
-    Clock,
-    User
+    User,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { subscribeToRoomTickets, createTicket, toggleUpvote } from "../services/firestore";
@@ -23,7 +22,7 @@ import { Home } from "lucide-react";
 const STRICT_CATEGORIES = ["Electrical", "Furniture", "Civil", "Washroom"];
 const RISK_CATEGORIES = ["Cleanliness", "Other"];
 
-const TicketPanel = ({ room, onClose }) => {
+const TicketPanel = ({ room, onClose, initialTicketId }) => {
     const { user } = useAuth();
     const [tickets, setTickets] = useState([]);
     const [activeTab, setActiveTab] = useState("view");
@@ -34,6 +33,7 @@ const TicketPanel = ({ room, onClose }) => {
 
     // NAVIGATION STATE
     const [selectedTicketId, setSelectedTicketId] = useState(null);
+    const [highlightedTicketId, setHighlightedTicketId] = useState(initialTicketId || null);
 
     // FLOW STATE
     const [showBlockedMsg, setShowBlockedMsg] = useState(false);
@@ -45,47 +45,46 @@ const TicketPanel = ({ room, onClose }) => {
     const [desc, setDesc] = useState("");
     const [file, setFile] = useState(null);
 
-    // Fetch Tickets
     useEffect(() => {
         if (!room) return;
         const unsubscribe = subscribeToRoomTickets(room.id, (data) => setTickets(data));
         return () => unsubscribe();
     }, [room]);
 
-    // Reset selection when room changes
     useEffect(() => {
         setSelectedTicketId(null);
         setActiveTab("view");
     }, [room]);
 
-    // Derived State for Detail View (Keeps it reactive!)
+    useEffect(() => {
+        if (initialTicketId) {
+            setActiveTab("view");
+            setHighlightedTicketId(initialTicketId);
+        }
+    }, [initialTicketId]);
+
     const selectedTicket = tickets.find((t) => t.id === selectedTicketId);
 
-    // === FILTER FOR SIMILAR TICKETS ===
     const similarTickets = tickets.filter((t) => t.category === category && t.status === "open");
 
-    // === ACTION: JUMP TO TICKET ===
     const handleJumpToTicket = async (ticket) => {
         if (!user) {
             alert("Please login to perform this action.");
             return;
         }
-        // Auto-Upvote
         if (!ticket.upvotes.includes(user.uid)) {
             await toggleUpvote(ticket.id, user.uid, ticket.upvotes);
         }
-        // Open Detail View
         setSelectedTicketId(ticket.id);
         setActiveTab("view");
     };
 
     const handleUpvoteClick = (e, ticket) => {
-        e.stopPropagation(); // Prevent opening detail view when clicking upvote
+        e.stopPropagation();
         if (!user) return;
         toggleUpvote(ticket.id, user.uid, ticket.upvotes);
     };
 
-    // Helper: Format Firestore Timestamp
     const formatDate = (timestamp) => {
         if (!timestamp) return "Just now";
         const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
@@ -98,7 +97,6 @@ const TicketPanel = ({ room, onClose }) => {
         });
     };
 
-    // === SUBMIT LOGIC ===
     const finalizeSubmit = async () => {
         setLoading(true);
         setShowKarmaWarning(false);
@@ -167,7 +165,6 @@ const TicketPanel = ({ room, onClose }) => {
             {/* Header */}
             <div className="bg-white p-4 border-b flex justify-between items-center sticky top-0 z-10">
                 <div className="flex items-center gap-2">
-                    {/* Back Button (Only in Detail Mode) */}
                     {activeTab === "view" && selectedTicketId && (
                         <button
                             onClick={() => setSelectedTicketId(null)}
@@ -186,7 +183,6 @@ const TicketPanel = ({ room, onClose }) => {
                 </button>
             </div>
 
-            {/* Tabs (Hidden in Detail Mode) */}
             {!selectedTicketId && (
                 <div className="flex border-b bg-gray-50/50">
                     <button
@@ -210,7 +206,6 @@ const TicketPanel = ({ room, onClose }) => {
                 </div>
             )}
 
-            {/* Main Content Area */}
             <div className="flex-1 overflow-y-auto bg-gray-50">
                 {/* === VIEW TAB === */}
                 {activeTab === "view" && (
@@ -254,8 +249,12 @@ const TicketPanel = ({ room, onClose }) => {
                                         )}
 
                                         <div className="flex justify-between items-center pt-2 border-t mt-2">
-                                            <span className="text-xs text-gray-400 flex items-center gap-1">
-                                                <Clock size={10} /> {formatDate(ticket.createdAt).split(",")[0]}
+                                            {/* ANONYMOUS DISPLAY IN LIST */}
+                                            <span className="text-xs text-gray-400 flex items-center gap-1.5">
+                                                <div className="w-4 h-4 bg-gray-200 rounded-full flex items-center justify-center">
+                                                    <User size={10} className="text-gray-500" />
+                                                </div>
+                                                Student
                                             </span>
 
                                             <button
@@ -284,7 +283,6 @@ const TicketPanel = ({ room, onClose }) => {
                             // B. TICKET DETAIL VIEW
                             selectedTicket && (
                                 <div className="bg-white min-h-full p-6 animate-fade-in">
-                                    {/* Category & Date */}
                                     <div className="flex justify-between items-center mb-4">
                                         <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold uppercase tracking-wider border border-blue-100">
                                             {selectedTicket.category}
@@ -295,12 +293,10 @@ const TicketPanel = ({ room, onClose }) => {
                                         </span>
                                     </div>
 
-                                    {/* Title/Description */}
                                     <h3 className="text-xl font-bold text-gray-900 mb-6 leading-relaxed">
                                         {selectedTicket.description}
                                     </h3>
 
-                                    {/* Full Image */}
                                     {selectedTicket.photoUrl && (
                                         <div className="mb-6 rounded-xl overflow-hidden border border-gray-200 shadow-sm">
                                             <img
@@ -311,18 +307,17 @@ const TicketPanel = ({ room, onClose }) => {
                                         </div>
                                     )}
 
-                                    {/* Metadata Card */}
+                                    {/* ANONYMOUS METADATA CARD */}
                                     <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 mb-6">
                                         <div className="flex justify-between items-center mb-3">
-                                            <div className="flex items-center gap-2">
-                                                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs">
-                                                    <User size={16} />
+                                            <div className="flex items-center gap-3">
+                                                {/* Generic Avatar */}
+                                                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 border-2 border-white shadow-sm">
+                                                    <User size={18} />
                                                 </div>
                                                 <div>
                                                     <p className="text-xs font-bold text-gray-700">Reported by</p>
-                                                    <p className="text-xs text-gray-500">
-                                                        {selectedTicket.createdBy.name}
-                                                    </p>
+                                                    <p className="text-xs text-gray-500 font-medium">Student</p>
                                                 </div>
                                             </div>
                                             <div className="text-right">
@@ -340,7 +335,6 @@ const TicketPanel = ({ room, onClose }) => {
                                         </div>
                                     </div>
 
-                                    {/* Action Bar */}
                                     <div className="flex gap-3">
                                         <button
                                             disabled={!user}
@@ -363,11 +357,6 @@ const TicketPanel = ({ room, onClose }) => {
                                             />
                                             {selectedTicket.voteCount || 0} Upvotes
                                         </button>
-
-                                        {/* Placeholder for Admin Actions */}
-                                        {/* <button className="p-3 rounded-xl border border-gray-200 hover:bg-gray-50 text-gray-600">
-                      <Share2 size={18} />
-                    </button> */}
                                     </div>
                                 </div>
                             )
@@ -378,7 +367,6 @@ const TicketPanel = ({ room, onClose }) => {
                 {/* === CREATE TAB (Standard Form) === */}
                 {activeTab === "create" && (
                     <div className="p-4 space-y-4">
-                        {/* ... Same Create Form Logic ... */}
                         {!user && (
                             <div className="bg-red-50 border border-red-200 text-red-600 p-3 rounded-lg text-xs flex gap-2 items-center animate-pulse">
                                 <AlertTriangle size={16} className="shrink-0" />
@@ -459,7 +447,6 @@ const TicketPanel = ({ room, onClose }) => {
                                     </select>
                                 </div>
 
-                                {/* SUGGESTION BOX */}
                                 {similarTickets.length > 0 && (
                                     <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 animate-fade-in">
                                         <div className="flex items-center gap-2 mb-2">
