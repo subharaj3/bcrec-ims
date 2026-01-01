@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import FloorMap from "./components/FloorMap";
-import TicketPanel from "./components/TicketModal";
+import TicketPanel from "./components/TicketPanel";
 import AdminMapEditor from "./components/AdminMapEditor";
 import { useAuth } from "./context/AuthContext";
 import { Settings } from "lucide-react";
