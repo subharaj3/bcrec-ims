@@ -71,16 +71,16 @@ const FloorMap = ({ onRoomSelect, isPanelOpen, selectedRoomId }) => {
         let classes = "cursor-pointer transition-all duration-300 ease-in-out ";
 
         const selectedFills = {
-            blue: "fill-blue-500/60",
-            red: "fill-red-500/60",
-            green: "fill-green-500/60",
+            blue: "fill-[#abc9fe]",
+            red: "fill-[#fba1a4]",
+            green: "fill-[#98e7b9]",
             default: "fill-gray-500/60",
         };
 
         const idleFills = {
-            blue: "fill-blue-500/20 hover:fill-blue-500/40",
-            red: "fill-red-500/20 hover:fill-red-500/40",
-            green: "fill-green-500/20 hover:fill-green-500/40",
+            blue: "fill-[#d5e5ff] hover:fill-[#bbd6ff]",
+            red: "fill-[#fed5d7] hover:fill-[#ffc2c5]",
+            green: "fill-[#ccf4dc] hover:fill-[#b2eecb]",
             default: "fill-gray-500/20 hover:fill-gray-500/40",
         };
 
@@ -97,18 +97,22 @@ const FloorMap = ({ onRoomSelect, isPanelOpen, selectedRoomId }) => {
             classes += (idleFills[colorType] || idleFills.default) + " ";
         }
 
-        if (count > 0) {
-            if (count <= 2) {
-                classes += "drop-shadow-[0_0_5px_rgba(248,113,113,1)] animate-pulse ";
-            } else if (count <= 5) {
-                classes += "drop-shadow-[0_0_15px_rgba(220,38,38,1)] animate-pulse ";
-            } else {
-                classes += "drop-shadow-[0_0_30px_rgba(220,38,38,1)] animate-pulse ";
-            }
+        if (count > 0 && !isSelected) {
+            // Apply our custom CSS animation class
+            classes += "animate-selection-glow ";
 
-            if (isSelected) {
-                classes += `${strokeStyles[colorType] || strokeStyles.default} stroke-[2px] `;
+            // Set intensity and color variables based on complaint count
+            if (count <= 2) {
+                // Low intensity: Soft Red
+                classes += "[--glow-intensity:10px] [--glow-color:rgba(248,113,113,0.7)] ";
+            } else if (count <= 5) {
+                // Mid intensity: Bright Red
+                classes += "[--glow-intensity:22px] [--glow-color:rgba(239,68,68,0.8)] ";
+            } else {
+                // High intensity: Deep Red
+                classes += "[--glow-intensity:40px] [--glow-color:rgba(185,28,28,1)] ";
             }
+            classes += `${strokeStyles[colorType] || strokeStyles.default} stroke-[1px] `;
         } else {
             if (isSelected) {
                 classes += `${strokeStyles[colorType] || strokeStyles.default} stroke-[2px] `;

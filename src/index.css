@@ -23,3 +23,21 @@ body {
 .animate-slide-down {
     animation: slideDown 0.2s ease-out forwards;
 }
+
+/* src/index.css */
+
+@keyframes selected-glow-pulse {
+
+    0%,
+    100% {
+        filter: drop-shadow(0 0 5px var(--glow-color));
+    }
+
+    50% {
+        filter: drop-shadow(0 0 20px var(--glow-color));
+    }
+}
+
+.animate-selection-glow {
+    animation: selected-glow-pulse 2s infinite ease-in-out;
+}
