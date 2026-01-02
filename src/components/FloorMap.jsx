@@ -159,7 +159,7 @@ const FloorMap = ({ onRoomSelect, isPanelOpen, selectedRoomId }) => {
                         className="relative bg-white shadow-2xl"
                     >
                         <img
-                            src="/Floor3.jpg"
+                            src="/Floorplan.jpg"
                             alt="Campus Map"
                             className="w-full h-full object-contain pointer-events-none select-none"
                         />

@@ -163,7 +163,7 @@ const AdminMapEditor = () => {
             {/* MAP CANVAS */}
             <div className="flex-1 overflow-auto relative bg-gray-500 p-10 cursor-crosshair">
                 <div className="relative bg-white shadow-2xl mx-auto" style={{ width: MAP_WIDTH, height: MAP_HEIGHT }}>
-                    <img src="/Floor3.jpg" className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-50 select-none" alt="Reference" />
+                    <img src="/Floorplan.jpg" className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-50 select-none" alt="Reference" />
 
                     {rects.map((room) => (
                         <Rnd
