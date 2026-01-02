@@ -19,7 +19,7 @@ import {
     AlertCircle,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import { subscribeToRoomTickets, createTicket, toggleUpvote, updateTicketStatus } from "../services/firestore";
+import { subscribeToRoomTickets, createTicket, toggleUpvote, updateTicketStatus, reviewTicket } from "../services/firestore";
 import { validateImageContent } from "../services/aiValidator";
 import { uploadEvidence } from "../services/cloudinary";
 
@@ -72,6 +72,8 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
     useEffect(() => {
         if (initialTicketId) {
             setActiveTab("view");
+            // BUG FIX: This forces the panel to switch to "Detail View" immediately
+            setSelectedTicketId(initialTicketId);
             setHighlightedTicketId(initialTicketId);
         }
     }, [initialTicketId]);
@@ -116,7 +118,7 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
 
     const executeStaffUpdate = async () => {
         setLoading(true);
-        const newStatus = confirmModal.action;
+        const actionType = confirmModal.action; // "in-progress", "resolved", or "fake"
 
         try {
             let proofUrl = selectedTicket.resolutionImageUrl || "";
@@ -124,22 +126,36 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
                 proofUrl = await uploadEvidence(staffFile);
             }
 
-            await updateTicketStatus(selectedTicket.id, {
-                status: newStatus,
-                staffNote: staffNote || selectedTicket.staffNote || "",
-                resolutionImageUrl: proofUrl,
-                resolvedBy: {
-                    name: user.displayName,
-                    uid: user.uid,
-                },
-            });
+            const staffData = {
+                uid: user.uid,
+                name: user.displayName,
+                note: staffNote || selectedTicket.staffNote || ""
+            };
+
+            if (actionType === "in-progress") {
+                // Simple update for "In Progress" (No karma change)
+                await updateTicketStatus(selectedTicket.id, {
+                    status: "in-progress",
+                    staffNote: staffData.note,
+                    resolutionImageUrl: proofUrl,
+                    resolvedBy: { name: staffData.name, uid: staffData.uid },
+                });
+            } else {
+                // === NEW: USE TRANSACTION FOR RESULT/FAKE ===
+                // This handles Karma logic automatically
+                const isFake = actionType === "fake";
+                // We need the original creator's ID to deduct/add their karma
+                const ticketCreatorId = selectedTicket.createdBy.uid;
+
+                await reviewTicket(selectedTicket.id, ticketCreatorId, isFake, staffData, proofUrl);
+            }
 
             setStaffNote("");
             setStaffFile(null);
             setConfirmModal({ show: false, action: null });
         } catch (error) {
             console.error(error);
-            alert("Failed to update status");
+            alert("Failed to update status: " + error);
         } finally {
             setLoading(false);
         }
@@ -218,13 +234,12 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
                         <div className="flex flex-col items-center text-center mb-4">
                             <div
                                 className={`p-3 rounded-full mb-3 
-                ${
-                    confirmModal.action === "fake"
-                        ? "bg-red-100 text-red-600"
-                        : confirmModal.action === "resolved"
-                        ? "bg-green-100 text-green-600"
-                        : "bg-blue-100 text-blue-600"
-                }`}
+                ${confirmModal.action === "fake"
+                                        ? "bg-red-100 text-red-600"
+                                        : confirmModal.action === "resolved"
+                                            ? "bg-green-100 text-green-600"
+                                            : "bg-blue-100 text-blue-600"
+                                    }`}
                             >
                                 {confirmModal.action === "fake" ? (
                                     <XCircle size={32} />
@@ -255,15 +270,14 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
                                 onClick={executeStaffUpdate}
                                 disabled={loading}
                                 className={`flex-1 py-2.5 text-white rounded-lg text-sm font-bold shadow-md transition-all flex justify-center items-center gap-2
-                  ${
-                      loading
-                          ? "bg-gray-400"
-                          : confirmModal.action === "fake"
-                          ? "bg-red-600 hover:bg-red-700"
-                          : confirmModal.action === "resolved"
-                          ? "bg-green-600 hover:bg-green-700"
-                          : "bg-blue-600 hover:bg-blue-700"
-                  }
+                  ${loading
+                                        ? "bg-gray-400"
+                                        : confirmModal.action === "fake"
+                                            ? "bg-red-600 hover:bg-red-700"
+                                            : confirmModal.action === "resolved"
+                                                ? "bg-green-600 hover:bg-green-700"
+                                                : "bg-blue-600 hover:bg-blue-700"
+                                    }
                 `}
                             >
                                 {loading ? <Sparkles size={16} className="animate-spin" /> : "Confirm"}
@@ -299,21 +313,19 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
                 <div className="flex border-b bg-gray-50/50">
                     <button
                         onClick={() => setActiveTab("view")}
-                        className={`flex-1 p-3 font-semibold text-xs uppercase ${
-                            activeTab === "view"
-                                ? "text-blue-600 border-b-2 border-blue-600 bg-white"
-                                : "text-gray-500 hover:bg-gray-100"
-                        }`}
+                        className={`flex-1 p-3 font-semibold text-xs uppercase ${activeTab === "view"
+                            ? "text-blue-600 border-b-2 border-blue-600 bg-white"
+                            : "text-gray-500 hover:bg-gray-100"
+                            }`}
                     >
                         Issues ({tickets.length})
                     </button>
                     <button
                         onClick={() => setActiveTab("create")}
-                        className={`flex-1 p-3 font-semibold text-xs uppercase ${
-                            activeTab === "create"
-                                ? "text-blue-600 border-b-2 border-blue-600 bg-white"
-                                : "text-gray-500 hover:bg-gray-100"
-                        }`}
+                        className={`flex-1 p-3 font-semibold text-xs uppercase ${activeTab === "create"
+                            ? "text-blue-600 border-b-2 border-blue-600 bg-white"
+                            : "text-gray-500 hover:bg-gray-100"
+                            }`}
                     >
                         Report New
                     </button>
@@ -338,15 +350,14 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
                                                 {ticket.category}
                                             </span>
                                             <span
-                                                className={`text-[10px] font-bold ${
-                                                    ticket.status === "resolved"
-                                                        ? "text-green-600"
-                                                        : ticket.status === "in-progress"
+                                                className={`text-[10px] font-bold ${ticket.status === "resolved"
+                                                    ? "text-green-600"
+                                                    : ticket.status === "in-progress"
                                                         ? "text-blue-600"
                                                         : ticket.status === "fake"
-                                                        ? "text-red-500"
-                                                        : "text-orange-500"
-                                                }`}
+                                                            ? "text-red-500"
+                                                            : "text-orange-500"
+                                                    }`}
                                             >
                                                 {ticket.status.toUpperCase()}
                                             </span>
@@ -376,13 +387,12 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
                                                 disabled={!user}
                                                 onClick={(e) => handleUpvoteClick(e, ticket)}
                                                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all
-                            ${
-                                !user
-                                    ? "bg-gray-50 text-gray-300"
-                                    : ticket.upvotes.includes(user.uid)
-                                    ? "bg-blue-600 text-white shadow-md"
-                                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                            }
+                            ${!user
+                                                        ? "bg-gray-50 text-gray-300"
+                                                        : ticket.upvotes.includes(user.uid)
+                                                            ? "bg-blue-600 text-white shadow-md"
+                                                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                                                    }
                           `}
                                             >
                                                 <ArrowBigUp size={12} /> {ticket.voteCount || 0}
@@ -403,15 +413,14 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
                                             {selectedTicket.category}
                                         </span>
                                         <span
-                                            className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${
-                                                selectedTicket.status === "resolved"
-                                                    ? "bg-green-100 text-green-700 border-green-200"
-                                                    : selectedTicket.status === "in-progress"
+                                            className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${selectedTicket.status === "resolved"
+                                                ? "bg-green-100 text-green-700 border-green-200"
+                                                : selectedTicket.status === "in-progress"
                                                     ? "bg-blue-100 text-blue-700 border-blue-200"
                                                     : selectedTicket.status === "fake"
-                                                    ? "bg-red-100 text-red-700 border-red-200"
-                                                    : "bg-orange-100 text-orange-700 border-orange-200"
-                                            }`}
+                                                        ? "bg-red-100 text-red-700 border-red-200"
+                                                        : "bg-orange-100 text-orange-700 border-orange-200"
+                                                }`}
                                         >
                                             {selectedTicket.status}
                                         </span>
@@ -447,11 +456,10 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
                                             <div className="text-right">
                                                 <p className="text-xs font-bold text-gray-700">Status</p>
                                                 <p
-                                                    className={`text-xs font-bold uppercase ${
-                                                        selectedTicket.status === "resolved"
-                                                            ? "text-green-600"
-                                                            : "text-orange-500"
-                                                    }`}
+                                                    className={`text-xs font-bold uppercase ${selectedTicket.status === "resolved"
+                                                        ? "text-green-600"
+                                                        : "text-orange-500"
+                                                        }`}
                                                 >
                                                     {selectedTicket.status}
                                                 </p>
@@ -468,13 +476,12 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
                                             disabled={!user}
                                             onClick={(e) => handleUpvoteClick(e, selectedTicket)}
                                             className={`flex-1 py-3 rounded-xl font-bold shadow-sm flex justify-center items-center gap-2 transition-all
-                        ${
-                            !user
-                                ? "bg-gray-100 text-gray-400"
-                                : selectedTicket.upvotes.includes(user.uid)
-                                ? "bg-blue-600 text-white shadow-blue-200"
-                                : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
-                        }
+                        ${!user
+                                                    ? "bg-gray-100 text-gray-400"
+                                                    : selectedTicket.upvotes.includes(user.uid)
+                                                        ? "bg-blue-600 text-white shadow-blue-200"
+                                                        : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                                                }
                       `}
                                         >
                                             <ArrowBigUp
@@ -680,11 +687,10 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
                                                             {ticket.description}
                                                         </p>
                                                         <span
-                                                            className={`text-[9px] font-bold uppercase ${
-                                                                ticket.status === "in-progress"
-                                                                    ? "text-blue-500"
-                                                                    : "text-orange-500"
-                                                            }`}
+                                                            className={`text-[9px] font-bold uppercase ${ticket.status === "in-progress"
+                                                                ? "text-blue-500"
+                                                                : "text-orange-500"
+                                                                }`}
                                                         >
                                                             {ticket.status}
                                                         </span>
@@ -722,9 +728,8 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
                                         )}
                                     </label>
                                     <div
-                                        className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer relative transition-colors ${
-                                            file ? "border-blue-400 bg-blue-50" : "border-gray-300 hover:bg-gray-100"
-                                        }`}
+                                        className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer relative transition-colors ${file ? "border-blue-400 bg-blue-50" : "border-gray-300 hover:bg-gray-100"
+                                            }`}
                                     >
                                         <input
                                             type="file"
@@ -744,13 +749,12 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
                                 <button
                                     type="submit"
                                     disabled={!user || loading || isValidating}
-                                    className={`w-full py-3.5 rounded-xl font-bold shadow-lg flex justify-center items-center gap-2 transition-all ${
-                                        !user
-                                            ? "bg-gray-300 cursor-not-allowed text-gray-500"
-                                            : loading || isValidating
+                                    className={`w-full py-3.5 rounded-xl font-bold shadow-lg flex justify-center items-center gap-2 transition-all ${!user
+                                        ? "bg-gray-300 cursor-not-allowed text-gray-500"
+                                        : loading || isValidating
                                             ? "bg-gray-400 cursor-wait text-white"
                                             : "bg-blue-600 hover:bg-blue-700 text-white"
-                                    }`}
+                                        }`}
                                 >
                                     {isValidating ? (
                                         <>

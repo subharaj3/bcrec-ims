@@ -14,16 +14,17 @@ import {
     ArrowBigUp,
     ArrowUpRight,
     Calendar,
+    Ban
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import { db } from "../services/firebase"; // Import DB
+import { db } from "../services/firebase";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
 
 const ProfilePanel = ({ onClose, onNavigate }) => {
     const { user, userData, completeProfile } = useAuth();
     const [isEditing, setIsEditing] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    const [userTickets, setUserTickets] = useState([]); // State for tickets
+    const [userTickets, setUserTickets] = useState([]);
 
     // Form State
     const [formData, setFormData] = useState({
@@ -32,7 +33,6 @@ const ProfilePanel = ({ onClose, onNavigate }) => {
         stream: "",
     });
 
-    // 1. Load User Data into Form
     useEffect(() => {
         if (userData) {
             setFormData({
@@ -43,29 +43,20 @@ const ProfilePanel = ({ onClose, onNavigate }) => {
         }
     }, [userData]);
 
-    // 2. Fetch User's Tickets (Real-time)
     useEffect(() => {
         if (!user) return;
-
-        // Query: Tickets created by THIS user
         const q = query(collection(db, "tickets"), where("createdBy.uid", "==", user.uid));
-
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const tickets = snapshot.docs.map((doc) => ({
                 id: doc.id,
                 ...doc.data(),
             }));
-
-            // Sort by Date Descending (Client-side sorting to avoid Firestore Index creation friction)
             tickets.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-
             setUserTickets(tickets);
         });
-
         return () => unsubscribe();
     }, [user]);
 
-    // Helper: Format Date
     const formatDate = (timestamp) => {
         if (!timestamp) return "Just now";
         const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
@@ -87,35 +78,56 @@ const ProfilePanel = ({ onClose, onNavigate }) => {
     if (!userData) return null;
 
     return (
-        // Increased width (w-96) to fit tickets comfortably
         <div className="absolute top-16 right-4 z-[60] w-96 bg-white rounded-2xl shadow-2xl border border-gray-100 overflow-hidden animate-slide-down origin-top-right flex flex-col max-h-[85vh]">
-            {/* Header */}
+
+            {/* === HEADER === */}
             <div className="bg-blue-600 p-6 text-white relative shrink-0">
+                {/* 1. Close Button (Top-Right) */}
                 <button
                     onClick={onClose}
-                    className="absolute top-4 right-4 p-1 hover:bg-blue-500 rounded-full transition-colors"
+                    className="absolute top-4 right-4 p-1.5 hover:bg-blue-500 rounded-full transition-colors z-10"
                 >
-                    <X size={16} />
+                    <X size={18} />
                 </button>
 
                 <div className="flex items-center gap-4">
-                    <div className="relative">
-                        <img
-                            src={user.photoURL}
-                            alt="Profile"
-                            className="w-16 h-16 rounded-full border-4 border-blue-400 shadow-md"
-                        />
-                        <div className="absolute -bottom-2 -right-2 bg-yellow-400 text-yellow-900 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm border border-white">
-                            <Award size={10} />
-                            {userData.karma || 0}
+                    {/* 2. Avatar */}
+                    <img
+                        src={user.photoURL}
+                        alt="Profile"
+                        className="w-16 h-16 rounded-full border-4 border-blue-400 shadow-md object-cover bg-white"
+                    />
+
+                    {/* 3. Name & Role */}
+                    <div className="flex flex-col pr-8"> {/* Added padding-right to avoid hitting X */}
+                        <h3 className="font-bold text-lg leading-tight truncate max-w-[180px]">
+                            {user.displayName}
+                        </h3>
+                        <div className="flex items-center gap-2 mt-1">
+                            <span className="text-xs bg-blue-700 px-2 py-0.5 rounded text-blue-100 uppercase font-bold tracking-wider">
+                                {userData.role}
+                            </span>
+                            {userData.isBanned && (
+                                <span className="text-xs bg-red-600 px-2 py-0.5 rounded text-white uppercase font-bold tracking-wider flex items-center gap-1">
+                                    <Ban size={10} /> Banned
+                                </span>
+                            )}
                         </div>
                     </div>
-                    <div>
-                        <h3 className="font-bold text-lg leading-tight">{user.displayName}</h3>
-                        <span className="text-xs bg-blue-700 px-2 py-0.5 rounded text-blue-100 uppercase font-bold tracking-wider">
-                            {userData.role}
-                        </span>
-                    </div>
+                </div>
+
+                {/* 4. Karma Display (Absolute Bottom-Right) */}
+                <div className={`absolute bottom-8 right-12 flex flex-col items-center justify-center px-3 py-1.5 rounded-xl border backdrop-blur-md shadow-lg transition-colors
+                    ${(userData.karma ?? 100) <= 0
+                        ? 'bg-red-500/30 border-red-400/50 text-red-50'
+                        : 'bg-white/20 border-white/30 text-white'}
+                `}>
+                    <span className="text-2xl font-bold leading-none filter drop-shadow-sm">
+                        {userData.karma ?? 100}
+                    </span>
+                    <span className="text-[9px] uppercase font-bold tracking-wider opacity-90 flex items-center gap-1 mt-0.5">
+                        <Award size={10} className="fill-current" /> Karma
+                    </span>
                 </div>
             </div>
 
@@ -250,7 +262,7 @@ const ProfilePanel = ({ onClose, onNavigate }) => {
                                     <div className="flex justify-between items-start mb-1">
                                         <span
                                             className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase
-                      ${ticket.status === "resolved" ? "bg-green-100 text-green-700" : "bg-orange-100 text-orange-700"}
+                      ${ticket.status === "resolved" ? "bg-green-100 text-green-700" : ticket.status === "fake" ? "bg-red-100 text-red-700" : "bg-orange-100 text-orange-700"}
                     `}
                                         >
                                             {ticket.status}

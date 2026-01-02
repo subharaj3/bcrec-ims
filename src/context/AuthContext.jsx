@@ -21,10 +21,20 @@ export const AuthProvider = ({ children }) => {
         const userSnap = await getDoc(userRef);
 
         if (userSnap.exists()) {
-            // User exists -> Load their data
-            setUserData(userSnap.data());
+            const data = userSnap.data();
+
+            // === NEW: BAN CHECK ===
+            if (data.isBanned) {
+                alert("🚫 ACCOUNT BANNED: Your Karma has dropped to 0 due to fake reports.");
+                await signOut(auth);
+                setUser(null);
+                setUserData(null);
+                return;
+            }
+
+            setUserData(data);
         } else {
-            // New User -> Create default doc (Profile Incomplete)
+            // New User -> Create default doc
             const newUserData = {
                 uid: currentUser.uid,
                 email: currentUser.email,
@@ -33,6 +43,8 @@ export const AuthProvider = ({ children }) => {
                 role: "student",
                 isProfileComplete: false,
                 createdAt: new Date(),
+                karma: 100,      // <--- NEW: Default Karma
+                isBanned: false  // <--- NEW: Default Ban Status
             };
             await setDoc(userRef, newUserData);
             setUserData(newUserData);
