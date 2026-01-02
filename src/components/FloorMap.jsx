@@ -174,11 +174,11 @@ const FloorMap = ({ onRoomSelect, isPanelOpen, selectedRoomId }) => {
                     </div>
                     <div className="flex items-center gap-3">
                         <div className="w-4 h-4 rounded-md bg-[#ccf4dc] border border-green-400"></div>
-                        <span className="text-xs text-gray-600">Classrooms</span>
+                        <span className="text-xs text-gray-600">Utility (Staff/Common Room)</span>
                     </div>
                     <div className="flex items-center gap-3">
                         <div className="w-4 h-4 rounded-md bg-[#fed5d7] border border-red-400"></div>
-                        <span className="text-xs text-gray-600">Restricted / Staff</span>
+                        <span className="text-xs text-gray-600">Classrooms</span>
                     </div>
                     <div className="flex items-center gap-3">
                         <div className="w-4 h-4 rounded-md bg-gray-200 border border-gray-400"></div>

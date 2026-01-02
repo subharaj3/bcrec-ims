@@ -19,10 +19,16 @@ import {
     AlertCircle,
     Award,
     BookOpen,
-    Loader2
+    Loader2,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import { subscribeToRoomTickets, createTicket, toggleUpvote, updateTicketStatus, reviewTicket } from "../services/firestore";
+import {
+    subscribeToRoomTickets,
+    createTicket,
+    toggleUpvote,
+    updateTicketStatus,
+    reviewTicket,
+} from "../services/firestore";
 import { validateImageContent } from "../services/aiValidator";
 import { uploadEvidence } from "../services/cloudinary";
 import { doc, getDoc } from "firebase/firestore";
@@ -118,8 +124,11 @@ const UserTooltip = ({ userId }) => {
                                         <Award size={14} className="text-orange-500" />
                                         <span className="text-xs font-bold">Karma</span>
                                     </div>
-                                    <span className={`text-sm font-black ${(stats?.karma ?? 100) < 50 ? "text-red-500" : "text-green-600"
-                                        }`}>
+                                    <span
+                                        className={`text-sm font-black ${
+                                            (stats?.karma ?? 100) < 50 ? "text-red-500" : "text-green-600"
+                                        }`}
+                                    >
                                         {stats?.karma ?? 100}
                                     </span>
                                 </div>
@@ -213,7 +222,7 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
         e.stopPropagation();
         if (!user) return;
 
-        if (ticket.status === 'resolved' || ticket.status === 'fake') return;
+        if (ticket.status === "resolved" || ticket.status === "fake") return;
 
         toggleUpvote(ticket.id, user.uid, ticket.upvotes);
     };
@@ -248,7 +257,7 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
             const staffData = {
                 uid: user.uid,
                 name: user.displayName,
-                note: staffNote || selectedTicket.staffNote || ""
+                note: staffNote || selectedTicket.staffNote || "",
             };
 
             if (actionType === "in-progress") {
@@ -352,12 +361,13 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
                         <div className="flex flex-col items-center text-center mb-4">
                             <div
                                 className={`p-3 rounded-full mb-3 
-                ${confirmModal.action === "fake"
-                                        ? "bg-red-100 text-red-600"
-                                        : confirmModal.action === "resolved"
-                                            ? "bg-green-100 text-green-600"
-                                            : "bg-blue-100 text-blue-600"
-                                    }`}
+                ${
+                    confirmModal.action === "fake"
+                        ? "bg-red-100 text-red-600"
+                        : confirmModal.action === "resolved"
+                        ? "bg-green-100 text-green-600"
+                        : "bg-blue-100 text-blue-600"
+                }`}
                             >
                                 {confirmModal.action === "fake" ? (
                                     <XCircle size={32} />
@@ -388,14 +398,15 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
                                 onClick={executeStaffUpdate}
                                 disabled={loading}
                                 className={`flex-1 py-2.5 text-white rounded-lg text-sm font-bold shadow-md transition-all flex justify-center items-center gap-2
-                  ${loading
-                                        ? "bg-gray-400"
-                                        : confirmModal.action === "fake"
-                                            ? "bg-red-600 hover:bg-red-700"
-                                            : confirmModal.action === "resolved"
-                                                ? "bg-green-600 hover:bg-green-700"
-                                                : "bg-blue-600 hover:bg-blue-700"
-                                    }
+                  ${
+                      loading
+                          ? "bg-gray-400"
+                          : confirmModal.action === "fake"
+                          ? "bg-red-600 hover:bg-red-700"
+                          : confirmModal.action === "resolved"
+                          ? "bg-green-600 hover:bg-green-700"
+                          : "bg-blue-600 hover:bg-blue-700"
+                  }
                 `}
                             >
                                 {loading ? <Sparkles size={16} className="animate-spin" /> : "Confirm"}
@@ -431,19 +442,21 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
                 <div className="flex border-b bg-gray-50/50">
                     <button
                         onClick={() => setActiveTab("view")}
-                        className={`flex-1 p-3 font-semibold text-xs uppercase ${activeTab === "view"
-                            ? "text-blue-600 border-b-2 border-blue-600 bg-white"
-                            : "text-gray-500 hover:bg-gray-100"
-                            }`}
+                        className={`flex-1 p-3 font-semibold text-xs uppercase ${
+                            activeTab === "view"
+                                ? "text-blue-600 border-b-2 border-blue-600 bg-white"
+                                : "text-gray-500 hover:bg-gray-100"
+                        }`}
                     >
                         Issues ({tickets.length})
                     </button>
                     <button
                         onClick={() => setActiveTab("create")}
-                        className={`flex-1 p-3 font-semibold text-xs uppercase ${activeTab === "create"
-                            ? "text-blue-600 border-b-2 border-blue-600 bg-white"
-                            : "text-gray-500 hover:bg-gray-100"
-                            }`}
+                        className={`flex-1 p-3 font-semibold text-xs uppercase ${
+                            activeTab === "create"
+                                ? "text-blue-600 border-b-2 border-blue-600 bg-white"
+                                : "text-gray-500 hover:bg-gray-100"
+                        }`}
                     >
                         Report New
                     </button>
@@ -461,60 +474,86 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
                                     <div
                                         key={ticket.id}
                                         onClick={() => setSelectedTicketId(ticket.id)}
-                                        className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover:shadow-md cursor-pointer group transition-all"
+                                        className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm hover:shadow-md cursor-pointer group transition-all"
                                     >
-                                        <div className="flex justify-between items-start mb-2">
-                                            <span className="text-[10px] px-2 py-0.5 rounded border font-bold uppercase bg-gray-50 text-gray-700">
-                                                {ticket.category}
-                                            </span>
-                                            <span
-                                                className={`text-[10px] font-bold ${ticket.status === "resolved"
-                                                    ? "text-green-600"
-                                                    : ticket.status === "in-progress"
-                                                        ? "text-blue-600"
-                                                        : ticket.status === "fake"
-                                                            ? "text-red-500"
-                                                            : "text-orange-500"
-                                                    }`}
-                                            >
-                                                {ticket.status.toUpperCase()}
-                                            </span>
-                                        </div>
-                                        <p className="text-sm font-bold text-gray-800 mb-1 group-hover:text-blue-600 truncate">
-                                            {ticket.description}
-                                        </p>
-                                        {ticket.photoUrl && (
-                                            <div className="h-24 w-full rounded-lg overflow-hidden my-3 border border-gray-100">
-                                                <img
-                                                    src={ticket.photoUrl}
-                                                    className="w-full h-full object-cover"
-                                                    alt="Preview"
-                                                />
-                                            </div>
-                                        )}
-                                        <div className="flex justify-between items-center pt-2 border-t mt-2">
-                                            {/* ANONYMOUS DISPLAY IN LIST */}
-                                            <span className="text-xs text-gray-400 flex items-center gap-1.5">
-                                                <div className="w-4 h-4 bg-gray-200 rounded-full flex items-center justify-center">
-                                                    <User size={10} className="text-gray-500" />
+                                        {/* FLEX CONTAINER: Vertical on mobile, Horizontal on large screens (>960px) */}
+                                        <div className="flex flex-col min-[960px]:flex-row gap-3">
+                                            {/* 1. IMAGE SECTION (Left on Desktop) */}
+                                            {ticket.photoUrl && (
+                                                <div className="shrink-0 w-full h-32 min-[960px]:w-28 min-[960px]:h-28 rounded-lg overflow-hidden border border-gray-100 bg-gray-50 relative">
+                                                    <img
+                                                        src={ticket.photoUrl}
+                                                        className="w-full h-full object-cover"
+                                                        alt="Preview"
+                                                    />
                                                 </div>
-                                                Student
-                                            </span>
+                                            )}
 
-                                            <button
-                                                disabled={!user || ticket.status === 'resolved' || ticket.status === 'fake'}
-                                                onClick={(e) => handleUpvoteClick(e, ticket)}
-                                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all
-                                                    ${!user || ticket.status === 'resolved' || ticket.status === 'fake'
-                                                        ? "bg-gray-50 text-gray-400 cursor-not-allowed" // Disabled Style
-                                                        : ticket.upvotes.includes(user.uid)
-                                                            ? "bg-blue-600 text-white shadow-md"
-                                                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                                                    }
-                                                `}
-                                            >
-                                                <ArrowBigUp size={12} /> {ticket.voteCount || 0}
-                                            </button>
+                                            {/* 2. CONTENT SECTION (Right on Desktop) */}
+                                            <div className="flex-1 flex flex-col">
+                                                {/* Header: Category & Status */}
+                                                <div className="flex justify-between items-start mb-1">
+                                                    <span className="text-[10px] px-2 py-0.5 rounded border font-bold uppercase bg-gray-50 text-gray-700 truncate max-w-[120px]">
+                                                        {ticket.category}
+                                                    </span>
+                                                    <span
+                                                        className={`text-xs font-bold shrink-0 ${
+                                                            ticket.status === "resolved"
+                                                                ? "text-green-600"
+                                                                : ticket.status === "in-progress"
+                                                                ? "text-blue-600"
+                                                                : ticket.status === "fake"
+                                                                ? "text-red-500"
+                                                                : "text-orange-500"
+                                                        }`}
+                                                    >
+                                                        {ticket.status.toUpperCase()}
+                                                    </span>
+                                                </div>
+
+                                                {/* Description (Truncated to 2 lines to keep list compact) */}
+                                                <p className="text-lg font-bold text-gray-800 mb-2 group-hover:text-blue-600 line-clamp-2 leading-snug">
+                                                    {ticket.description}
+                                                </p>
+
+                                                {/* Footer: User & Vote (Pushed to bottom) */}
+                                                <div className="mt-auto flex justify-between items-center pt-2 border-t border-gray-50">
+                                                    {/* User Info */}
+                                                    <span className="text-md text-gray-400 flex items-center gap-1.5">
+                                                        <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center">
+                                                            <User size={16} className="text-gray-400" />
+                                                        </div>
+                                                        <span className="truncate max-w-[100px]">Student</span>
+                                                    </span>
+
+                                                    {/* Vote Button */}
+                                                    <button
+                                                        disabled={
+                                                            !user ||
+                                                            ticket.status === "resolved" ||
+                                                            ticket.status === "fake"
+                                                        }
+                                                        onClick={(e) => handleUpvoteClick(e, ticket)}
+                                                        className={`flex items-center gap-1 px-3 py-1 rounded-lg text-md font-bold transition-all
+                            ${
+                                !user || ticket.status === "resolved" || ticket.status === "fake"
+                                    ? "bg-gray-50 text-gray-400 cursor-not-allowed"
+                                    : ticket.upvotes.includes(user.uid)
+                                    ? "bg-green-600 text-white shadow-md"
+                                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                            }
+                        `}
+                                                    >
+                                                        <ArrowBigUp
+                                                            size={16}
+                                                            className={
+                                                                ticket.upvotes.includes(user?.uid) ? "fill-current" : ""
+                                                            }
+                                                        />
+                                                        {ticket.voteCount || 0}
+                                                    </button>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 ))}
@@ -531,14 +570,15 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
                                             {selectedTicket.category}
                                         </span>
                                         <span
-                                            className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${selectedTicket.status === "resolved"
-                                                ? "bg-green-100 text-green-700 border-green-200"
-                                                : selectedTicket.status === "in-progress"
+                                            className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${
+                                                selectedTicket.status === "resolved"
+                                                    ? "bg-green-100 text-green-700 border-green-200"
+                                                    : selectedTicket.status === "in-progress"
                                                     ? "bg-blue-100 text-blue-700 border-blue-200"
                                                     : selectedTicket.status === "fake"
-                                                        ? "bg-red-100 text-red-700 border-red-200"
-                                                        : "bg-orange-100 text-orange-700 border-orange-200"
-                                                }`}
+                                                    ? "bg-red-100 text-red-700 border-red-200"
+                                                    : "bg-orange-100 text-orange-700 border-orange-200"
+                                            }`}
                                         >
                                             {selectedTicket.status}
                                         </span>
@@ -549,10 +589,13 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
                                     </h3>
 
                                     {selectedTicket.photoUrl && (
-                                        <div className="mb-6 rounded-xl overflow-hidden border border-gray-200 shadow-sm relative group">
+                                        // CHANGED: Fixed height (h-64 or h-72) + Flex centering
+                                        // This ensures every ticket takes up the same amount of vertical space regardless of image aspect ratio
+                                        <div className="mb-6 rounded-xl overflow-hidden border border-gray-200 shadow-sm relative group bg-gray-100 h-96 flex items-center justify-center">
                                             <img
                                                 src={selectedTicket.photoUrl}
-                                                className="w-full h-auto object-contain bg-gray-50"
+                                                // CHANGED: max-w/max-h ensures it fits inside the box without stretching
+                                                className="max-w-full max-h-full object-contain"
                                                 alt="Issue"
                                             />
                                         </div>
@@ -574,30 +617,38 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
                                             <div className="text-right">
                                                 <p className="text-xs font-bold text-gray-700">Status</p>
                                                 <p
-                                                    className={`text-xs font-bold uppercase ${selectedTicket.status === "resolved"
-                                                        ? "text-green-600"
-                                                        : "text-orange-500"
-                                                        }`}
+                                                    className={`text-xs font-bold uppercase ${
+                                                        selectedTicket.status === "resolved"
+                                                            ? "text-green-600"
+                                                            : "text-orange-500"
+                                                    }`}
                                                 >
                                                     {selectedTicket.status}
                                                 </p>
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-lg border border-gray-200 shadow-sm">
-                                            <ArrowBigUp size={14} className="text-blue-500" />{" "}
+                                            <ArrowBigUp size={14} className="text-green-500" />{" "}
                                             <span className="font-bold text-xs">{selectedTicket.voteCount}</span>
                                         </div>
                                     </div>
 
                                     <div className="flex gap-3">
                                         <button
-                                            disabled={!user || selectedTicket.status === 'resolved' || selectedTicket.status === 'fake'}
+                                            disabled={
+                                                !user ||
+                                                selectedTicket.status === "resolved" ||
+                                                selectedTicket.status === "fake"
+                                            }
                                             onClick={(e) => handleUpvoteClick(e, selectedTicket)}
                                             className={`flex-1 py-3 rounded-xl font-bold shadow-sm flex justify-center items-center gap-2 transition-all
-                                                ${!user || selectedTicket.status === 'resolved' || selectedTicket.status === 'fake'
-                                                    ? "bg-gray-100 text-gray-400 cursor-not-allowed" // Disabled Style
-                                                    : selectedTicket.upvotes.includes(user.uid)
-                                                        ? "bg-blue-600 text-white shadow-blue-200"
+                                                ${
+                                                    !user ||
+                                                    selectedTicket.status === "resolved" ||
+                                                    selectedTicket.status === "fake"
+                                                        ? "bg-gray-100 text-gray-400 cursor-not-allowed" // Disabled Style
+                                                        : selectedTicket.upvotes.includes(user.uid)
+                                                        ? "bg-green-600 text-white shadow-blue-200"
                                                         : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
                                                 }
                                             `}
@@ -606,7 +657,9 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
                                                 size={18}
                                                 className={
                                                     // Check if user exists BEFORE accessing user.uid
-                                                    user && selectedTicket.upvotes.includes(user.uid) ? "fill-current" : ""
+                                                    user && selectedTicket.upvotes.includes(user.uid)
+                                                        ? "fill-current"
+                                                        : ""
                                                 }
                                             />
                                             {selectedTicket.voteCount || 0} Upvotes
@@ -614,65 +667,67 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
                                     </div>
 
                                     {/* === STAFF ACTIONS (Light UI) === */}
-                                    {(userData?.role === "staff" || userData?.role === "admin") && selectedTicket.status !== "fake" && (
-                                        <div className="mt-5 bg-gray-50 rounded-xl p-5 shadow-sm mb-6 border border-gray-200">
-                                            <div className="flex items-center gap-2 mb-4 border-b border-gray-200 pb-2">
-                                                <Briefcase size={18} className="text-blue-600" />
-                                                <span className="font-bold text-sm text-gray-700 tracking-wide">
-                                                    Staff Actions
-                                                </span>
-                                            </div>
-
-                                            {/* Note Input */}
-                                            <textarea
-                                                className="w-full bg-white border border-gray-300 rounded-lg p-3 text-sm text-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none mb-3 transition-colors"
-                                                rows="2"
-                                                placeholder="Add progress note or resolution details..."
-                                                value={staffNote}
-                                                onChange={(e) => setStaffNote(e.target.value)}
-                                            />
-
-                                            {/* Upload */}
-                                            <div className="flex items-center gap-3 mb-4">
-                                                <label className="flex items-center gap-2 cursor-pointer bg-white border border-gray-300 hover:bg-gray-100 px-3 py-2 rounded-lg text-xs font-bold text-gray-700 transition-colors shadow-sm">
-                                                    <Camera size={14} /> {staffFile ? "Change Proof" : "Upload Proof"}
-                                                    <input
-                                                        type="file"
-                                                        className="hidden"
-                                                        onChange={(e) => setStaffFile(e.target.files[0])}
-                                                        accept="image/*"
-                                                    />
-                                                </label>
-                                                {staffFile && (
-                                                    <span className="text-xs text-green-600 font-medium truncate max-w-[150px]">
-                                                        {staffFile.name}
+                                    {(userData?.role === "staff" || userData?.role === "admin") &&
+                                        selectedTicket.status !== "fake" && (
+                                            <div className="mt-5 bg-gray-50 rounded-xl p-5 shadow-sm mb-6 border border-gray-200">
+                                                <div className="flex items-center gap-2 mb-4 border-b border-gray-200 pb-2">
+                                                    <Briefcase size={18} className="text-blue-600" />
+                                                    <span className="font-bold text-sm text-gray-700 tracking-wide">
+                                                        Staff Actions
                                                     </span>
-                                                )}
-                                            </div>
+                                                </div>
 
-                                            {/* Buttons */}
-                                            <div className="grid grid-cols-3 gap-2">
-                                                <button
-                                                    onClick={() => initiateStaffAction("in-progress")}
-                                                    className="bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-xs font-bold flex flex-col items-center gap-1 transition-colors shadow-sm"
-                                                >
-                                                    <Clock size={14} /> In Progress
-                                                </button>
-                                                <button
-                                                    onClick={() => initiateStaffAction("resolved")}
-                                                    className="bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg text-xs font-bold flex flex-col items-center gap-1 transition-colors shadow-sm"
-                                                >
-                                                    <CheckCircle size={14} /> Resolve
-                                                </button>
-                                                <button
-                                                    onClick={() => initiateStaffAction("fake")}
-                                                    className="bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg text-xs font-bold flex flex-col items-center gap-1 transition-colors shadow-sm"
-                                                >
-                                                    <XCircle size={14} /> Flag Fake
-                                                </button>
+                                                {/* Note Input */}
+                                                <textarea
+                                                    className="w-full bg-white border border-gray-300 rounded-lg p-3 text-sm text-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none mb-3 transition-colors"
+                                                    rows="2"
+                                                    placeholder="Add progress note or resolution details..."
+                                                    value={staffNote}
+                                                    onChange={(e) => setStaffNote(e.target.value)}
+                                                />
+
+                                                {/* Upload */}
+                                                <div className="flex items-center gap-3 mb-4">
+                                                    <label className="flex items-center gap-2 cursor-pointer bg-white border border-gray-300 hover:bg-gray-100 px-3 py-2 rounded-lg text-xs font-bold text-gray-700 transition-colors shadow-sm">
+                                                        <Camera size={14} />{" "}
+                                                        {staffFile ? "Change Proof" : "Upload Proof"}
+                                                        <input
+                                                            type="file"
+                                                            className="hidden"
+                                                            onChange={(e) => setStaffFile(e.target.files[0])}
+                                                            accept="image/*"
+                                                        />
+                                                    </label>
+                                                    {staffFile && (
+                                                        <span className="text-xs text-green-600 font-medium truncate max-w-[150px]">
+                                                            {staffFile.name}
+                                                        </span>
+                                                    )}
+                                                </div>
+
+                                                {/* Buttons */}
+                                                <div className="grid grid-cols-3 gap-2">
+                                                    <button
+                                                        onClick={() => initiateStaffAction("in-progress")}
+                                                        className="bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-xs font-bold flex flex-col items-center gap-1 transition-colors shadow-sm"
+                                                    >
+                                                        <Clock size={14} /> In Progress
+                                                    </button>
+                                                    <button
+                                                        onClick={() => initiateStaffAction("resolved")}
+                                                        className="bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg text-xs font-bold flex flex-col items-center gap-1 transition-colors shadow-sm"
+                                                    >
+                                                        <CheckCircle size={14} /> Resolve
+                                                    </button>
+                                                    <button
+                                                        onClick={() => initiateStaffAction("fake")}
+                                                        className="bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg text-xs font-bold flex flex-col items-center gap-1 transition-colors shadow-sm"
+                                                    >
+                                                        <XCircle size={14} /> Flag Fake
+                                                    </button>
+                                                </div>
                                             </div>
-                                        </div>
-                                    )}
+                                        )}
 
                                     {/* OFFICIAL UPDATE */}
                                     {(selectedTicket.staffNote || selectedTicket.resolutionImageUrl) && (
@@ -807,10 +862,11 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
                                                             {ticket.description}
                                                         </p>
                                                         <span
-                                                            className={`text-[9px] font-bold uppercase ${ticket.status === "in-progress"
-                                                                ? "text-blue-500"
-                                                                : "text-orange-500"
-                                                                }`}
+                                                            className={`text-[9px] font-bold uppercase ${
+                                                                ticket.status === "in-progress"
+                                                                    ? "text-blue-500"
+                                                                    : "text-orange-500"
+                                                            }`}
                                                         >
                                                             {ticket.status}
                                                         </span>
@@ -848,8 +904,9 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
                                         )}
                                     </label>
                                     <div
-                                        className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer relative transition-colors ${file ? "border-blue-400 bg-blue-50" : "border-gray-300 hover:bg-gray-100"
-                                            }`}
+                                        className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer relative transition-colors ${
+                                            file ? "border-blue-400 bg-blue-50" : "border-gray-300 hover:bg-gray-100"
+                                        }`}
                                     >
                                         <input
                                             type="file"
@@ -869,12 +926,13 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
                                 <button
                                     type="submit"
                                     disabled={!user || loading || isValidating}
-                                    className={`w-full py-3.5 rounded-xl font-bold shadow-lg flex justify-center items-center gap-2 transition-all ${!user
-                                        ? "bg-gray-300 cursor-not-allowed text-gray-500"
-                                        : loading || isValidating
+                                    className={`w-full py-3.5 rounded-xl font-bold shadow-lg flex justify-center items-center gap-2 transition-all ${
+                                        !user
+                                            ? "bg-gray-300 cursor-not-allowed text-gray-500"
+                                            : loading || isValidating
                                             ? "bg-gray-400 cursor-wait text-white"
                                             : "bg-blue-600 hover:bg-blue-700 text-white"
-                                        }`}
+                                    }`}
                                 >
                                     {isValidating ? (
                                         <>

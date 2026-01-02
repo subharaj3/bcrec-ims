@@ -1,16 +1,15 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { auth, googleProvider, db } from "../services/firebase";
 import { signInWithPopup, signOut, onAuthStateChanged } from "firebase/auth";
-import { doc, getDoc, setDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs } from "firebase/firestore"; // Added query imports
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(null); // Auth User (Google)
-    const [userData, setUserData] = useState(null); // DB User (Firestore Data)
+    const [user, setUser] = useState(null);
+    const [userData, setUserData] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    // SYNC USER WITH FIRESTORE
     const syncUserWithDb = async (currentUser) => {
         if (!currentUser) {
             setUserData(null);
@@ -22,48 +21,56 @@ export const AuthProvider = ({ children }) => {
 
         if (userSnap.exists()) {
             const data = userSnap.data();
-
-            // === NEW: BAN CHECK ===
             if (data.isBanned) {
-                alert("🚫 ACCOUNT BANNED: Your Karma has dropped to 0 due to fake reports.");
+                alert("Your account has been banned due to low karma.");
                 await signOut(auth);
                 setUser(null);
                 setUserData(null);
                 return;
             }
-
             setUserData(data);
         } else {
-            // New User -> Create default doc
             const newUserData = {
                 uid: currentUser.uid,
                 email: currentUser.email,
                 name: currentUser.displayName,
                 photoURL: currentUser.photoURL,
                 role: "student",
-                isProfileComplete: false,
-                createdAt: new Date(),
                 karma: 100,
-                isBanned: false
+                isProfileComplete: false,
+                isBanned: false,
+                createdAt: new Date(),
             };
             await setDoc(userRef, newUserData);
             setUserData(newUserData);
         }
     };
 
-    // FUNCTION TO COMPLETE PROFILE
+    // === UPDATED: COMPLETE PROFILE WITH UNIQUENESS CHECK ===
     const completeProfile = async (profileData) => {
         if (!user) return;
 
+        // 1. CHECK FOR DUPLICATE ROLL NUMBER
+        // Query users where rollNumber matches the input
+        const q = query(collection(db, "users"), where("rollNumber", "==", profileData.rollNumber.trim()));
+
+        const querySnapshot = await getDocs(q);
+
+        // If we find a doc, check if it belongs to someone else
+        const duplicateUser = querySnapshot.docs.find((doc) => doc.id !== user.uid);
+
+        if (duplicateUser) {
+            throw new Error("ROLL_NUMBER_TAKEN"); // Throw specific error
+        }
+
+        // 2. PROCEED IF UNIQUE
         const updates = {
-            ...profileData, // rollNumber, course, stream
+            ...profileData,
             isProfileComplete: true,
         };
 
-        // Update DB
         await updateDoc(doc(db, "users", user.uid), updates);
 
-        // Update Local State (Instant UI update)
         setUserData((prev) => ({ ...prev, ...updates }));
     };
 
@@ -89,14 +96,7 @@ export const AuthProvider = ({ children }) => {
         return () => unsubscribe();
     }, []);
 
-    const value = {
-        user,
-        userData, // Contains role, rollNumber, isProfileComplete
-        login,
-        logout,
-        completeProfile, // Export this so the form can use it
-        loading,
-    };
+    const value = { user, userData, login, logout, completeProfile, loading };
 
     return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>;
 };
