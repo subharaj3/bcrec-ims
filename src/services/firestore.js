@@ -78,13 +78,11 @@ export const toggleUpvote = async (ticketId, userId, currentUpvotes) => {
 
 // MAP EDITOR FUNCTIONS
 // Save Room Layout (Admin only)
-// src/services/firestore.js
-// ... imports
 
 // A Key for our local cache
 const LOCAL_CACHE_KEY = "ccms_map_cache";
 
-// 5. SAVE ROOM LAYOUT (Admin Only)
+// SAVE ROOM LAYOUT (Admin Only)
 export const saveMapLayout = async (rooms) => {
   try {
     // 1. Save to Cloud (Firestore)
@@ -93,7 +91,7 @@ export const saveMapLayout = async (rooms) => {
       lastUpdated: serverTimestamp(),
     });
 
-    // 2. Save to Local Cache (Browser DB)
+    // Save to Local Cache (Browser DB)
     localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(rooms));
 
     console.log("Map layout saved to Cloud & Local Cache!");
@@ -103,12 +101,12 @@ export const saveMapLayout = async (rooms) => {
   }
 };
 
-// 6. FETCH ROOM LAYOUT (Smart Sync)
+// FETCH ROOM LAYOUT (Smart Sync)
 export const getMapLayout = async () => {
   try {
     // Strategy: Network First, Fallback to Cache
 
-    // 1. Try to fetch from Firestore
+    // Try to fetch from Firestore
     const docRef = doc(db, "maps", "main-campus");
     const docSnap = await getDoc(docRef);
 
@@ -124,14 +122,14 @@ export const getMapLayout = async () => {
     console.warn("Firestore unavailable/offline. Checking Local Cache...");
   }
 
-  // 2. If Firestore failed or is empty, check Local Cache
+  // If Firestore failed or is empty, check Local Cache
   const cachedData = localStorage.getItem(LOCAL_CACHE_KEY);
   if (cachedData) {
     console.log("Map loaded from Local Cache (Offline Mode).");
     return JSON.parse(cachedData);
   }
 
-  // 3. If Cache is empty, return null (FloorMap will use roomData.js)
+  // If Cache is empty, return null (FloorMap will use roomData.js)
   return null;
 };
 
@@ -156,9 +154,7 @@ export const subscribeToHeatmap = (callback) => {
   });
 };
 
-// ... existing code ...
-
-// 8. UPDATE TICKET STATUS (Staff/Admin)
+// UPDATE TICKET STATUS (Staff/Admin)
 export const updateTicketStatus = async (ticketId, updates) => {
   try {
     const ticketRef = doc(db, "tickets", ticketId);
@@ -218,7 +214,7 @@ export const reviewTicket = async (
         currentKarma += karmaChange;
       }
 
-      // 1. Update User
+      // Update User
       if (userDoc.exists()) {
         transaction.update(userRef, {
           karma: currentKarma,
@@ -226,7 +222,7 @@ export const reviewTicket = async (
         });
       }
 
-      // 2. Update Ticket
+      // Update Ticket
       transaction.update(ticketRef, {
         status: isFake ? "fake" : "resolved",
         staffNote: staffData.note || "",

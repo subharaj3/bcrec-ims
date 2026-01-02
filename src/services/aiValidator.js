@@ -1,8 +1,7 @@
-// src/services/aiValidator.js
 import * as mobilenet from "@tensorflow-models/mobilenet";
 import "@tensorflow/tfjs"; // Loads the backend (CPU/WebGL)
 
-// 1. Define "Allowed" Keywords
+// Define "Allowed" Keywords
 // MobileNet detects 1000 types of objects. We only want these:
 // src/services/aiValidator.js
 // ... imports
@@ -64,7 +63,7 @@ export const validateImageContent = async (file) => {
   try {
     const net = await loadModel();
 
-    // 1. Convert File -> HTMLImageElement (Required by TF.js)
+    // Convert File -> HTMLImageElement (Required by TF.js)
     const imgElement = document.createElement("img");
     imgElement.src = URL.createObjectURL(file);
 
@@ -73,7 +72,7 @@ export const validateImageContent = async (file) => {
       imgElement.onload = resolve;
     });
 
-    // 2. Classify
+    // Classify
     // Returns array: [{ className: "desktop computer", probability: 0.9 }, ...]
     const predictions = await net.classify(imgElement);
     console.log("AI Predictions:", predictions);
@@ -81,7 +80,7 @@ export const validateImageContent = async (file) => {
     // Clean up memory
     URL.revokeObjectURL(imgElement.src);
 
-    // 3. Logic: Check if ANY prediction matches our keywords
+    // Logic: Check if ANY prediction matches our keywords
     const topPrediction = predictions[0]; // The most likely object
 
     // Check if any of the top 3 predictions contain our keywords

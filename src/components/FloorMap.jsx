@@ -31,7 +31,7 @@ const FloorMap = ({ onRoomSelect, isPanelOpen, selectedRoomId }) => {
         return () => unsubscribe();
     }, []);
 
-    // === 1. REACTIVE ZOOM LOGIC ===
+    // === REACTIVE ZOOM LOGIC ===
     useEffect(() => {
         if (selectedRoomId && transformComponentRef.current) {
             const { zoomToElement } = transformComponentRef.current;
@@ -45,14 +45,14 @@ const FloorMap = ({ onRoomSelect, isPanelOpen, selectedRoomId }) => {
         wasPanelOpen.current = isPanelOpen;
     }, [selectedRoomId, isPanelOpen]);
 
-    // === 2. CENTER ON LOAD ===
+    // === CENTER ON LOAD ===
     useEffect(() => {
         setTimeout(() => {
             if (transformComponentRef.current) transformComponentRef.current.centerView(0.4, 0);
         }, 100);
     }, []);
 
-    // === 3. RESET ON CLOSE ===
+    // === RESET ON CLOSE ===
     useEffect(() => {
         if (!isPanelOpen && transformComponentRef.current) {
             const { centerView } = transformComponentRef.current;
@@ -70,7 +70,6 @@ const FloorMap = ({ onRoomSelect, isPanelOpen, selectedRoomId }) => {
         if (onRoomSelect) onRoomSelect(room);
     };
 
-    // ... (Keep existing getRoomStyle logic) ...
     const getRoomStyle = (room, isSelected) => {
         const count = ticketCounts[room.id] || 0;
         const colorType = room.color || "blue";
@@ -106,7 +105,6 @@ const FloorMap = ({ onRoomSelect, isPanelOpen, selectedRoomId }) => {
 
         if (count > 0 && !isSelected) {
             classes += "animate-selection-glow ";
-            // Simplified glow logic for class string
             if (count <= 2) {
                 classes += "[--glow-intensity:10px] [--glow-color:rgba(248,113,113,0.7)] ";
             } else if (count <= 5) {
@@ -139,7 +137,7 @@ const FloorMap = ({ onRoomSelect, isPanelOpen, selectedRoomId }) => {
     return (
         <div className="w-full h-full bg-gray-900 flex flex-col items-center justify-center relative overflow-hidden">
 
-            {/* 1. INFO BADGE (Top Center) */}
+            {/* INFO BADGE (Top Center) */}
             <div className="absolute top-6 z-50 bg-white/90 backdrop-blur px-6 py-2 rounded-full shadow-xl border border-gray-200 flex items-center gap-2">
                 <Info size={18} className="text-blue-600" />
                 <div>
@@ -150,9 +148,12 @@ const FloorMap = ({ onRoomSelect, isPanelOpen, selectedRoomId }) => {
                 </div>
             </div>
 
-            {/* 2. LEGEND (Bottom Left - Hides on Panel Open) */}
-            <div className={`absolute bottom-6 left-6 z-50 bg-white/90 backdrop-blur p-4 rounded-2xl shadow-xl border border-gray-200 transition-all duration-500 ease-in-out transform
-                ${isPanelOpen ? "-translate-x-full opacity-0 pointer-events-none" : "translate-x-0 opacity-100"}
+            {/* LEGEND (Bottom Left - Hides on Panel Open) */}
+            <div className={`absolute left-6 top-1/2 z-50 bg-white/90 backdrop-blur p-4 rounded-2xl shadow-xl border border-gray-200 transition-all duration-500 ease-in-out transform
+                ${isPanelOpen
+                    ? "-translate-x-full -translate-y-1/2 opacity-0 pointer-events-none"
+                    : "translate-x-0 -translate-y-1/2 opacity-100"
+                }
             `}>
                 <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-100">
                     <Layers size={14} className="text-gray-400" />
@@ -186,7 +187,7 @@ const FloorMap = ({ onRoomSelect, isPanelOpen, selectedRoomId }) => {
                 </div>
             </div>
 
-            {/* 3. RE-CENTER BUTTON (Bottom Right - Hides on Panel Open) */}
+            {/* RE-CENTER BUTTON (Bottom Right - Hides on Panel Open) */}
             <button
                 onClick={handleResetView}
                 className={`absolute bottom-6 right-6 z-50 p-3 bg-white hover:bg-gray-100 text-gray-700 rounded-full shadow-xl border border-gray-200 transition-all duration-500 ease-in-out transform hover:scale-110 active:scale-95
@@ -197,7 +198,7 @@ const FloorMap = ({ onRoomSelect, isPanelOpen, selectedRoomId }) => {
                 <Locate size={24} />
             </button>
 
-            {/* 4. MAP CANVAS */}
+            {/* MAP CANVAS */}
             <TransformWrapper
                 initialScale={0.4}
                 minScale={0.1}

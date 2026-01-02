@@ -24,8 +24,6 @@ body {
     animation: slideDown 0.2s ease-out forwards;
 }
 
-/* src/index.css */
-
 @keyframes selected-glow-pulse {
 
     0%,

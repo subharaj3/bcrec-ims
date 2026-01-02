@@ -82,7 +82,7 @@ const ProfilePanel = ({ onClose, onNavigate }) => {
 
             {/* === HEADER === */}
             <div className="bg-blue-600 p-6 text-white relative shrink-0">
-                {/* 1. Close Button (Top-Right) */}
+                {/* Close Button (Top-Right) */}
                 <button
                     onClick={onClose}
                     className="absolute top-4 right-4 p-1.5 hover:bg-blue-500 rounded-full transition-colors z-10"
@@ -91,14 +91,14 @@ const ProfilePanel = ({ onClose, onNavigate }) => {
                 </button>
 
                 <div className="flex items-center gap-4">
-                    {/* 2. Avatar */}
+                    {/* Avatar */}
                     <img
                         src={user.photoURL}
                         alt="Profile"
                         className="w-16 h-16 rounded-full border-4 border-blue-400 shadow-md object-cover bg-white"
                     />
 
-                    {/* 3. Name & Role */}
+                    {/* Name & Role */}
                     <div className="flex flex-col pr-8"> {/* Added padding-right to avoid hitting X */}
                         <h3 className="font-bold text-lg leading-tight truncate max-w-[180px]">
                             {user.displayName}
@@ -116,7 +116,7 @@ const ProfilePanel = ({ onClose, onNavigate }) => {
                     </div>
                 </div>
 
-                {/* 4. Karma Display (Absolute Bottom-Right) */}
+                {/* Karma Display (Absolute Bottom-Right) */}
                 <div className={`absolute bottom-8 right-12 flex flex-col items-center justify-center px-3 py-1.5 rounded-xl border backdrop-blur-md shadow-lg transition-colors
                     ${(userData.karma ?? 100) <= 0
                         ? 'bg-red-500/30 border-red-400/50 text-red-50'
@@ -174,6 +174,8 @@ const ProfilePanel = ({ onClose, onNavigate }) => {
                                     <option>M.Tech</option>
                                     <option>BCA</option>
                                     <option>MCA</option>
+                                    {/* RESTRICTION: Only show this option if user is NOT a student */}
+                                    {userData?.role !== 'student' && <option>Admin/Staff</option>}
                                 </select>
                             ) : (
                                 <p className="text-sm font-bold text-gray-800">{formData.course}</p>
@@ -196,7 +198,10 @@ const ProfilePanel = ({ onClose, onNavigate }) => {
                                     <option>EE</option>
                                     <option>ME</option>
                                     <option>CE</option>
-                                    <option>AIML</option>
+                                    <option>CSE(AIML)</option>
+                                    <option>CSE(DS)</option>
+                                    <option>CSE(CS)</option>
+                                    <option>CSD</option>
                                 </select>
                             ) : (
                                 <p className="text-sm font-bold text-gray-800">{formData.stream}</p>

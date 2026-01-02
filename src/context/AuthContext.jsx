@@ -10,7 +10,7 @@ export const AuthProvider = ({ children }) => {
     const [userData, setUserData] = useState(null); // DB User (Firestore Data)
     const [loading, setLoading] = useState(true);
 
-    // 1. SYNC USER WITH FIRESTORE
+    // SYNC USER WITH FIRESTORE
     const syncUserWithDb = async (currentUser) => {
         if (!currentUser) {
             setUserData(null);
@@ -43,15 +43,15 @@ export const AuthProvider = ({ children }) => {
                 role: "student",
                 isProfileComplete: false,
                 createdAt: new Date(),
-                karma: 100,      // <--- NEW: Default Karma
-                isBanned: false  // <--- NEW: Default Ban Status
+                karma: 100,
+                isBanned: false
             };
             await setDoc(userRef, newUserData);
             setUserData(newUserData);
         }
     };
 
-    // 2. FUNCTION TO COMPLETE PROFILE
+    // FUNCTION TO COMPLETE PROFILE
     const completeProfile = async (profileData) => {
         if (!user) return;
 

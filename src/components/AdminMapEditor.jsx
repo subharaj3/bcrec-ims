@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Rnd } from 'react-rnd';
-import { Plus, Trash2, Save, Copy, Loader2 } from 'lucide-react'; // Added 'Copy' back
+import { Plus, Trash2, Save, Copy, Loader2 } from 'lucide-react';
 import { RoomData as fallbackData } from '../utils/RoomData';
 import { saveMapLayout, getMapLayout } from '../services/firestore';
 
@@ -14,7 +14,7 @@ const AdminMapEditor = () => {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState(false);
 
-    // 1. FETCH DATA ON MOUNT
+    // FETCH DATA ON MOUNT
     useEffect(() => {
         const loadData = async () => {
             const dbRooms = await getMapLayout();
@@ -30,7 +30,7 @@ const AdminMapEditor = () => {
 
     const selectedRect = rects.find(r => r.id === selectedId);
 
-    // 2. SAVE TO FIREBASE
+    // SAVE TO FIREBASE
     const handleSave = async () => {
         setSaving(true);
         try {
@@ -43,7 +43,7 @@ const AdminMapEditor = () => {
         }
     };
 
-    // 3. COPY TO CLIPBOARD (Backup Feature)
+    // COPY TO CLIPBOARD (Backup Feature)
     const copyToClipboard = () => {
         const output = `export const RoomData = ${JSON.stringify(rects, null, 2)};`;
         navigator.clipboard.writeText(output);
@@ -68,10 +68,10 @@ const AdminMapEditor = () => {
     };
 
     const handleMetaUpdate = (key, value) => {
-        // 1. Update the specific room in the array
+        // Update the specific room in the array
         setRects(rects.map(r => r.id === selectedId ? { ...r, [key]: value } : r));
 
-        // 2. CRITICAL FIX: If we just changed the ID, update the selection state too!
+        // CRITICAL FIX: If we just changed the ID, update the selection state too!
         // Otherwise, selectedId points to a ghost room, causing the crash.
         if (key === 'id') {
             setSelectedId(value);
@@ -122,7 +122,6 @@ const AdminMapEditor = () => {
                                         <option value="blue">Blue (Lab/Hall)</option>
                                         <option value="red">Red (Classroom)</option>
                                         <option value="green">Green (Utility)</option>
-                                        <option value="green">Others </option>
                                     </select>
                                 </div>
 

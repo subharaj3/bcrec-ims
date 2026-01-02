@@ -31,6 +31,7 @@ import { db } from "../services/firebase";
 // === CONFIGURATION ===
 const STRICT_CATEGORIES = ["Electrical", "Furniture", "Civil", "Washroom"];
 const RISK_CATEGORIES = ["Cleanliness", "Other"];
+
 // === CLICKABLE USER TOOLTIP (ANONYMIZED) ===
 const UserTooltip = ({ userId }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -212,7 +213,6 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
         e.stopPropagation();
         if (!user) return;
 
-        // === NEW CHECK: Prevent voting on resolved/fake tickets ===
         if (ticket.status === 'resolved' || ticket.status === 'fake') return;
 
         toggleUpvote(ticket.id, user.uid, ticket.upvotes);
@@ -237,7 +237,7 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
 
     const executeStaffUpdate = async () => {
         setLoading(true);
-        const actionType = confirmModal.action; // "in-progress", "resolved", or "fake"
+        const actionType = confirmModal.action;
 
         try {
             let proofUrl = selectedTicket.resolutionImageUrl || "";
@@ -260,7 +260,6 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
                     resolvedBy: { name: staffData.name, uid: staffData.uid },
                 });
             } else {
-                // === NEW: USE TRANSACTION FOR RESULT/FAKE ===
                 // This handles Karma logic automatically
                 const isFake = actionType === "fake";
                 // We need the original creator's ID to deduct/add their karma
@@ -606,7 +605,8 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
                                             <ArrowBigUp
                                                 size={18}
                                                 className={
-                                                    selectedTicket.upvotes.includes(user.uid) ? "fill-current" : ""
+                                                    // Check if user exists BEFORE accessing user.uid
+                                                    user && selectedTicket.upvotes.includes(user.uid) ? "fill-current" : ""
                                                 }
                                             />
                                             {selectedTicket.voteCount || 0} Upvotes
@@ -614,7 +614,7 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
                                     </div>
 
                                     {/* === STAFF ACTIONS (Light UI) === */}
-                                    {(userData.role === "staff" || userData.role === "admin") && selectedTicket.status !== "fake" && (
+                                    {(userData?.role === "staff" || userData?.role === "admin") && selectedTicket.status !== "fake" && (
                                         <div className="mt-5 bg-gray-50 rounded-xl p-5 shadow-sm mb-6 border border-gray-200">
                                             <div className="flex items-center gap-2 mb-4 border-b border-gray-200 pb-2">
                                                 <Briefcase size={18} className="text-blue-600" />
@@ -779,12 +779,12 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
                                             setShowBlockedMsg(false);
                                         }}
                                     >
-                                        <option value="Electrical">Electrical (AI Checked)</option>
-                                        <option value="Civil">Civil (AI Checked)</option>
-                                        <option value="Furniture">Furniture (AI Checked)</option>
-                                        <option value="Washroom">Washroom (AI Checked)</option>
-                                        <option value="Cleanliness">Cleanliness (Karma Risk)</option>
-                                        <option value="Other">Other (Karma Risk)</option>
+                                        <option value="Electrical">Electrical</option>
+                                        <option value="Civil">Civil</option>
+                                        <option value="Furniture">Furniture</option>
+                                        <option value="Washroom">Washroom</option>
+                                        <option value="Cleanliness">Cleanliness</option>
+                                        <option value="Other">Other</option>
                                     </select>
                                 </div>
 

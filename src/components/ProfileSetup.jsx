@@ -22,8 +22,7 @@ const ProfileSetup = () => {
                 course,
                 stream,
             });
-            // The parent component (App.jsx) will automatically unmount this
-            // because 'userData.isProfileComplete' will become true.
+
         } catch (error) {
             console.error("Profile update failed", error);
             alert("Failed to save profile. Try again.");
@@ -49,7 +48,7 @@ const ProfileSetup = () => {
                     {/* Roll Number */}
                     <div>
                         <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-1">
-                            <Hash size={16} className="text-blue-500" /> College Roll Number
+                            <Hash size={16} className="text-blue-500" /> Roll Number
                         </label>
                         <input
                             type="text"
@@ -62,7 +61,7 @@ const ProfileSetup = () => {
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
-                        {/* Course */}
+                        {/*  */}
                         <div>
                             <label className="flex items-center gap-2 text-sm font-bold text-gray-700 mb-1">
                                 <GraduationCap size={16} className="text-blue-500" /> Course
@@ -74,6 +73,10 @@ const ProfileSetup = () => {
                             >
                                 <option>B.Tech</option>
                                 <option>M.Tech</option>
+                                <option>BCA</option>
+                                <option>MCA</option>
+                                {/* RESTRICTION: Only show this option if user is NOT a student */}
+                                {userData?.role !== 'student' && <option>Admin/Staff</option>}
                             </select>
                         </div>
 
@@ -89,9 +92,10 @@ const ProfileSetup = () => {
                             >
                                 <option>IT</option>
                                 <option>CSE</option>
-                                <option>CSDS</option>
+                                <option>CSE(DS)</option>
+                                <option>CSE(CS)</option>
                                 <option>CSD</option>
-                                <option>AIML</option>
+                                <option>CSE(AIML)</option>
                                 <option>ECE</option>
                                 <option>EE</option>
                                 <option>ME</option>

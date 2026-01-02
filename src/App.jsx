@@ -34,10 +34,10 @@ function App() {
 
     // Handler for Profile Navigation
     const handleTicketNavigation = (ticket) => {
-        // 1. Close Profile Panel
+        // Close Profile Panel
         setIsProfileOpen(false);
 
-        // 2. Set the Room (triggers Map Zoom via FloorMap useEffect)
+        // Set the Room (triggers Map Zoom via FloorMap useEffect)
         // We construct a minimal room object since we might not have the full rect data here,
         // but TicketPanel mainly needs ID and Label.
         setSelectedRoom({
@@ -45,10 +45,10 @@ function App() {
             label: ticket.roomName,
         });
 
-        // 3. Set the Ticket ID to highlight
+        // Set the Ticket ID to highlight
         setFocusTicketId(ticket.id);
 
-        // 4. Open Panel
+        // Open Panel
         setIsPanelOpen(true);
     };
 
@@ -62,10 +62,9 @@ function App() {
                 <button
                     onClick={() => setIsAdminMode(!isAdminMode)}
                     className={`absolute bottom-6 left-6 z-50 p-3 rounded-full shadow-xl transition-all border border-gray-700
-                        ${
-                            isAdminMode
-                                ? "bg-red-600 text-white hover:bg-red-700"
-                                : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white"
+                        ${isAdminMode
+                            ? "bg-red-600 text-white hover:bg-red-700"
+                            : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white"
                         }
                     `}
                     title={isAdminMode ? "Exit Editor" : "Open Map Editor"}
@@ -87,10 +86,9 @@ function App() {
                                     <div
                                         onClick={() => setIsProfileOpen(!isProfileOpen)}
                                         className={`flex items-center gap-3 bg-white/90 backdrop-blur p-1.5 pl-3 rounded-full shadow-lg border cursor-pointer transition-all hover:bg-white
-                                            ${
-                                                isProfileOpen
-                                                    ? "border-blue-500 ring-2 ring-blue-100"
-                                                    : "border-gray-200"
+                                            ${isProfileOpen
+                                                ? "border-blue-500 ring-2 ring-blue-100"
+                                                : "border-gray-200"
                                             }
                                         `}
                                     >
@@ -120,7 +118,7 @@ function App() {
                                     {isProfileOpen && (
                                         <ProfilePanel
                                             onClose={() => setIsProfileOpen(false)}
-                                            onNavigate={handleTicketNavigation} // <--- Passed Here
+                                            onNavigate={handleTicketNavigation}
                                         />
                                     )}
                                 </>
@@ -142,9 +140,8 @@ function App() {
                     </div>
 
                     <div
-                        className={`h-full bg-white relative z-40 shadow-2xl overflow-hidden transition-[width] duration-500 ease-in-out border-l border-gray-200 ${
-                            isPanelOpen ? "w-[40vw]" : "w-0 border-none"
-                        }`}
+                        className={`h-full bg-white relative z-40 shadow-2xl overflow-hidden transition-[width] duration-500 ease-in-out border-l border-gray-200 ${isPanelOpen ? "w-[40vw]" : "w-0 border-none"
+                            }`}
                     >
                         <div className="w-[40vw] h-full">
                             {/* Pass Focus ID */}
