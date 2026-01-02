@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
     ArrowUpRight,
     ArrowBigUp,
@@ -17,15 +17,130 @@ import {
     XCircle,
     Clock,
     AlertCircle,
+    Award,
+    BookOpen,
+    Loader2
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { subscribeToRoomTickets, createTicket, toggleUpvote, updateTicketStatus, reviewTicket } from "../services/firestore";
 import { validateImageContent } from "../services/aiValidator";
 import { uploadEvidence } from "../services/cloudinary";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "../services/firebase";
 
 // === CONFIGURATION ===
 const STRICT_CATEGORIES = ["Electrical", "Furniture", "Civil", "Washroom"];
 const RISK_CATEGORIES = ["Cleanliness", "Other"];
+// === CLICKABLE USER TOOLTIP (ANONYMIZED) ===
+const UserTooltip = ({ userId }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const [stats, setStats] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const containerRef = useRef(null);
+
+    const toggleStats = async (e) => {
+        e.stopPropagation();
+        if (isOpen) {
+            setIsOpen(false);
+            return;
+        }
+
+        setLoading(true);
+        setIsOpen(true);
+        try {
+            const userRef = doc(db, "users", userId);
+            const snap = await getDoc(userRef);
+            if (snap.exists()) {
+                setStats(snap.data());
+            }
+        } catch (error) {
+            console.error("Failed to fetch user stats", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Close when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (containerRef.current && !containerRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    return (
+        <div className="relative inline-block z-10" ref={containerRef}>
+            {/* TRIGGER: Shows "Student" instead of Name */}
+            <button
+                onClick={toggleStats}
+                className="text-xs text-blue-600 font-bold hover:underline transition-colors text-left flex items-center gap-1"
+            >
+                {/* Default to Student, or generic Reporter if strictly unknown */}
+                User
+            </button>
+
+            {/* POPOVER STATS CARD */}
+            {isOpen && (
+                <div className="absolute top-full left-0 mt-2 z-50 w-48 bg-white rounded-xl shadow-xl border border-gray-100 animate-fade-in overflow-hidden">
+                    {loading ? (
+                        <div className="p-4 flex justify-center">
+                            <Loader2 size={16} className="animate-spin text-blue-500" />
+                        </div>
+                    ) : (
+                        <div className="flex flex-col">
+                            {/* Header */}
+                            <div className="bg-slate-50 p-2 border-b border-gray-100">
+                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                                    Reporter Stats
+                                </span>
+                            </div>
+
+                            {/* Stats Content */}
+                            <div className="p-3 space-y-3">
+                                {/* Role (New) */}
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2 text-gray-600">
+                                        <User size={14} className="text-gray-500" />
+                                        <span className="text-xs font-bold">Role</span>
+                                    </div>
+                                    <span className="text-xs font-bold uppercase text-blue-600 bg-blue-50 px-2 py-0.5 rounded">
+                                        {stats?.role || "Student"}
+                                    </span>
+                                </div>
+
+                                {/* Karma */}
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2 text-gray-600">
+                                        <Award size={14} className="text-orange-500" />
+                                        <span className="text-xs font-bold">Karma</span>
+                                    </div>
+                                    <span className={`text-sm font-black ${(stats?.karma ?? 100) < 50 ? "text-red-500" : "text-green-600"
+                                        }`}>
+                                        {stats?.karma ?? 100}
+                                    </span>
+                                </div>
+
+                                {/* Dept/Stream */}
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2 text-gray-600">
+                                        <BookOpen size={14} className="text-blue-500" />
+                                        <span className="text-xs font-bold">Dept</span>
+                                    </div>
+                                    <span className="text-xs font-semibold text-gray-800 bg-gray-100 px-2 py-0.5 rounded">
+                                        {stats?.stream || "N/A"}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+        </div>
+    );
+};
 
 const TicketPanel = ({ room, onClose, initialTicketId }) => {
     const { user, userData } = useAuth();
@@ -96,6 +211,10 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
     const handleUpvoteClick = (e, ticket) => {
         e.stopPropagation();
         if (!user) return;
+
+        // === NEW CHECK: Prevent voting on resolved/fake tickets ===
+        if (ticket.status === 'resolved' || ticket.status === 'fake') return;
+
         toggleUpvote(ticket.id, user.uid, ticket.upvotes);
     };
 
@@ -384,16 +503,16 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
                                             </span>
 
                                             <button
-                                                disabled={!user}
+                                                disabled={!user || ticket.status === 'resolved' || ticket.status === 'fake'}
                                                 onClick={(e) => handleUpvoteClick(e, ticket)}
                                                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all
-                            ${!user
-                                                        ? "bg-gray-50 text-gray-300"
+                                                    ${!user || ticket.status === 'resolved' || ticket.status === 'fake'
+                                                        ? "bg-gray-50 text-gray-400 cursor-not-allowed" // Disabled Style
                                                         : ticket.upvotes.includes(user.uid)
                                                             ? "bg-blue-600 text-white shadow-md"
                                                             : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                                                     }
-                          `}
+                                                `}
                                             >
                                                 <ArrowBigUp size={12} /> {ticket.voteCount || 0}
                                             </button>
@@ -450,7 +569,7 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
                                                 </div>
                                                 <div>
                                                     <p className="text-xs font-bold text-gray-700">Reported by</p>
-                                                    <p className="text-xs text-gray-500 font-medium">Student</p>
+                                                    <UserTooltip userId={selectedTicket.createdBy.uid} />
                                                 </div>
                                             </div>
                                             <div className="text-right">
@@ -473,16 +592,16 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
 
                                     <div className="flex gap-3">
                                         <button
-                                            disabled={!user}
+                                            disabled={!user || selectedTicket.status === 'resolved' || selectedTicket.status === 'fake'}
                                             onClick={(e) => handleUpvoteClick(e, selectedTicket)}
                                             className={`flex-1 py-3 rounded-xl font-bold shadow-sm flex justify-center items-center gap-2 transition-all
-                        ${!user
-                                                    ? "bg-gray-100 text-gray-400"
+                                                ${!user || selectedTicket.status === 'resolved' || selectedTicket.status === 'fake'
+                                                    ? "bg-gray-100 text-gray-400 cursor-not-allowed" // Disabled Style
                                                     : selectedTicket.upvotes.includes(user.uid)
                                                         ? "bg-blue-600 text-white shadow-blue-200"
                                                         : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
                                                 }
-                      `}
+                                            `}
                                         >
                                             <ArrowBigUp
                                                 size={18}
@@ -493,6 +612,7 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
                                             {selectedTicket.voteCount || 0} Upvotes
                                         </button>
                                     </div>
+
                                     {/* === STAFF ACTIONS (Light UI) === */}
                                     {(userData.role === "staff" || userData.role === "admin") && selectedTicket.status !== "fake" && (
                                         <div className="mt-5 bg-gray-50 rounded-xl p-5 shadow-sm mb-6 border border-gray-200">
