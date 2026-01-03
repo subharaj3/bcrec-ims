@@ -3,7 +3,6 @@ import {
     ArrowUpRight,
     ArrowBigUp,
     ArrowLeft,
-    Calendar,
     Camera,
     AlertTriangle,
     Sparkles,
@@ -16,7 +15,6 @@ import {
     CheckCircle,
     XCircle,
     Clock,
-    AlertCircle,
     Award,
     BookOpen,
     Loader2,
@@ -38,7 +36,7 @@ import { db } from "../services/firebase";
 const STRICT_CATEGORIES = ["Electrical", "Furniture", "Civil", "Washroom"];
 const RISK_CATEGORIES = ["Cleanliness", "Other"];
 
-// === CLICKABLE USER TOOLTIP (ANONYMIZED) ===
+// === SIMPLE USER TOOLTIP ===
 const UserTooltip = ({ userId }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [stats, setStats] = useState(null);
@@ -67,7 +65,6 @@ const UserTooltip = ({ userId }) => {
         }
     };
 
-    // Close when clicking outside
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (containerRef.current && !containerRef.current.contains(event.target)) {
@@ -80,16 +77,13 @@ const UserTooltip = ({ userId }) => {
 
     return (
         <div className="relative inline-block z-10" ref={containerRef}>
-            {/* TRIGGER: Shows "Student" instead of Name */}
             <button
                 onClick={toggleStats}
                 className="text-xs text-blue-600 font-bold hover:underline transition-colors text-left flex items-center gap-1"
             >
-                {/* Default to Student, or generic Reporter if strictly unknown */}
                 User
             </button>
 
-            {/* POPOVER STATS CARD */}
             {isOpen && (
                 <div className="absolute top-full left-0 mt-2 z-50 w-48 bg-white rounded-xl shadow-xl border border-gray-100 animate-fade-in overflow-hidden">
                     {loading ? (
@@ -98,16 +92,12 @@ const UserTooltip = ({ userId }) => {
                         </div>
                     ) : (
                         <div className="flex flex-col">
-                            {/* Header */}
                             <div className="bg-slate-50 p-2 border-b border-gray-100">
                                 <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
                                     Reporter Stats
                                 </span>
                             </div>
-
-                            {/* Stats Content */}
                             <div className="p-3 space-y-3">
-                                {/* Role (New) */}
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2 text-gray-600">
                                         <User size={14} className="text-gray-500" />
@@ -117,30 +107,16 @@ const UserTooltip = ({ userId }) => {
                                         {stats?.role || "Student"}
                                     </span>
                                 </div>
-
-                                {/* Karma */}
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2 text-gray-600">
                                         <Award size={14} className="text-orange-500" />
                                         <span className="text-xs font-bold">Karma</span>
                                     </div>
                                     <span
-                                        className={`text-sm font-black ${
-                                            (stats?.karma ?? 100) < 50 ? "text-red-500" : "text-green-600"
-                                        }`}
+                                        className={`text-sm font-black ${(stats?.karma ?? 100) < 50 ? "text-red-500" : "text-green-600"
+                                            }`}
                                     >
                                         {stats?.karma ?? 100}
-                                    </span>
-                                </div>
-
-                                {/* Dept/Stream */}
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-2 text-gray-600">
-                                        <BookOpen size={14} className="text-blue-500" />
-                                        <span className="text-xs font-bold">Dept</span>
-                                    </div>
-                                    <span className="text-xs font-semibold text-gray-800 bg-gray-100 px-2 py-0.5 rounded">
-                                        {stats?.stream || "N/A"}
                                     </span>
                                 </div>
                             </div>
@@ -197,13 +173,12 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
     useEffect(() => {
         if (initialTicketId) {
             setActiveTab("view");
-            // BUG FIX: This forces the panel to switch to "Detail View" immediately
             setSelectedTicketId(initialTicketId);
             setHighlightedTicketId(initialTicketId);
         }
     }, [initialTicketId]);
-    const selectedTicket = tickets.find((t) => t.id === selectedTicketId);
 
+    const selectedTicket = tickets.find((t) => t.id === selectedTicketId);
     const similarTickets = tickets.filter((t) => t.category === category && ["open", "in-progress"].includes(t.status));
 
     const handleJumpToTicket = async (ticket) => {
@@ -221,25 +196,10 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
     const handleUpvoteClick = (e, ticket) => {
         e.stopPropagation();
         if (!user) return;
-
-        if (ticket.status === "resolved" || ticket.status === "fake") return;
-
+        if (ticket.status === 'resolved' || ticket.status === 'fake') return;
         toggleUpvote(ticket.id, user.uid, ticket.upvotes);
     };
 
-    const formatDate = (timestamp) => {
-        if (!timestamp) return "Just now";
-        const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-        return date.toLocaleDateString("en-US", {
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-        });
-    };
-
-    // === STAFF ACTIONS ===
     const initiateStaffAction = (actionType) => {
         setConfirmModal({ show: true, action: actionType });
     };
@@ -261,7 +221,6 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
             };
 
             if (actionType === "in-progress") {
-                // Simple update for "In Progress" (No karma change)
                 await updateTicketStatus(selectedTicket.id, {
                     status: "in-progress",
                     staffNote: staffData.note,
@@ -269,11 +228,8 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
                     resolvedBy: { name: staffData.name, uid: staffData.uid },
                 });
             } else {
-                // This handles Karma logic automatically
                 const isFake = actionType === "fake";
-                // We need the original creator's ID to deduct/add their karma
                 const ticketCreatorId = selectedTicket.createdBy.uid;
-
                 await reviewTicket(selectedTicket.id, ticketCreatorId, isFake, staffData, proofUrl);
             }
 
@@ -288,7 +244,6 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
         }
     };
 
-    // === STUDENT SUBMISSION ===
     const finalizeSubmit = async () => {
         setLoading(true);
         setShowKarmaWarning(false);
@@ -353,36 +308,26 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
     };
 
     return (
-        <div className="h-full w-full bg-white flex flex-col border-l border-gray-200 shadow-2xl relative">
-            {/* CONFIRMATION DIALOG */}
+        <div className="h-full w-full bg-white flex flex-col relative">
+
             {confirmModal.show && (
                 <div className="absolute inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-6 animate-fade-in">
                     <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm border border-gray-200">
                         <div className="flex flex-col items-center text-center mb-4">
-                            <div
-                                className={`p-3 rounded-full mb-3 
-                ${
-                    confirmModal.action === "fake"
-                        ? "bg-red-100 text-red-600"
-                        : confirmModal.action === "resolved"
-                        ? "bg-green-100 text-green-600"
-                        : "bg-blue-100 text-blue-600"
-                }`}
+                            <div className={`p-3 rounded-full mb-3 
+                                ${confirmModal.action === "fake" ? "bg-red-100 text-red-600" :
+                                    confirmModal.action === "resolved" ? "bg-green-100 text-green-600" :
+                                        "bg-blue-100 text-blue-600"}`}
                             >
-                                {confirmModal.action === "fake" ? (
-                                    <XCircle size={32} />
-                                ) : confirmModal.action === "resolved" ? (
-                                    <CheckCircle size={32} />
-                                ) : (
-                                    <Clock size={32} />
-                                )}
+                                {confirmModal.action === "fake" ? <XCircle size={32} /> :
+                                    confirmModal.action === "resolved" ? <CheckCircle size={32} /> :
+                                        <Clock size={32} />}
                             </div>
                             <h3 className="text-lg font-bold text-gray-800">
                                 Mark as {confirmModal.action.replace("-", " ").toUpperCase()}?
                             </h3>
                             <p className="text-xs text-gray-500 mt-2">
                                 This will update the ticket status visible to all students.
-                                {confirmModal.action === "fake" && " This action cannot be easily undone."}
                             </p>
                         </div>
 
@@ -398,16 +343,12 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
                                 onClick={executeStaffUpdate}
                                 disabled={loading}
                                 className={`flex-1 py-2.5 text-white rounded-lg text-sm font-bold shadow-md transition-all flex justify-center items-center gap-2
-                  ${
-                      loading
-                          ? "bg-gray-400"
-                          : confirmModal.action === "fake"
-                          ? "bg-red-600 hover:bg-red-700"
-                          : confirmModal.action === "resolved"
-                          ? "bg-green-600 hover:bg-green-700"
-                          : "bg-blue-600 hover:bg-blue-700"
-                  }
-                `}
+                                    ${loading ? "bg-gray-400" :
+                                        confirmModal.action === "fake" ? "bg-red-600 hover:bg-red-700" :
+                                            confirmModal.action === "resolved" ? "bg-green-600 hover:bg-green-700" :
+                                                "bg-blue-600 hover:bg-blue-700"
+                                    }
+                                `}
                             >
                                 {loading ? <Sparkles size={16} className="animate-spin" /> : "Confirm"}
                             </button>
@@ -417,46 +358,44 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
             )}
 
             {/* HEADER */}
-            <div className="bg-white p-4 border-b flex justify-between items-center sticky top-0 z-10">
-                <div className="flex items-center gap-2">
+            <div className="bg-white p-6 border-b border-gray-100 flex justify-between items-center sticky top-0 z-10 shrink-0">
+                <div className="flex items-center gap-3">
                     {activeTab === "view" && selectedTicketId && (
                         <button
                             onClick={() => setSelectedTicketId(null)}
-                            className="mr-1 p-1.5 hover:bg-gray-100 rounded-full text-gray-600 transition-colors"
+                            className="mr-1 p-2 hover:bg-gray-100 rounded-full text-gray-600 transition-colors"
                         >
                             <ArrowLeft size={20} />
                         </button>
                     )}
                     <div>
-                        <h2 className="text-xl font-bold text-gray-800">{room.label}</h2>
-                        <p className="text-gray-500 text-xs font-mono">{room.id}</p>
+                        <h2 className="text-2xl font-black text-gray-800 leading-none">{room.label}</h2>
+                        <p className="text-gray-400 text-xs font-bold uppercase tracking-wider mt-1">{room.id}</p>
                     </div>
                 </div>
-                <button onClick={onClose} className="bg-gray-100 hover:bg-gray-200 p-2 rounded-full transition-colors">
+                <button onClick={onClose} className="bg-gray-50 hover:bg-gray-100 p-2.5 rounded-full transition-colors border border-gray-200">
                     <Home size={20} className="text-gray-600" />
                 </button>
             </div>
 
             {/* TABS */}
             {!selectedTicketId && (
-                <div className="flex border-b bg-gray-50/50">
+                <div className="flex border-b border-gray-100 bg-white shrink-0">
                     <button
                         onClick={() => setActiveTab("view")}
-                        className={`flex-1 p-3 font-semibold text-xs uppercase ${
-                            activeTab === "view"
-                                ? "text-blue-600 border-b-2 border-blue-600 bg-white"
-                                : "text-gray-500 hover:bg-gray-100"
-                        }`}
+                        className={`flex-1 p-4 font-bold text-xs uppercase tracking-wider transition-colors ${activeTab === "view"
+                            ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50/30"
+                            : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+                            }`}
                     >
                         Issues ({tickets.length})
                     </button>
                     <button
                         onClick={() => setActiveTab("create")}
-                        className={`flex-1 p-3 font-semibold text-xs uppercase ${
-                            activeTab === "create"
-                                ? "text-blue-600 border-b-2 border-blue-600 bg-white"
-                                : "text-gray-500 hover:bg-gray-100"
-                        }`}
+                        className={`flex-1 p-4 font-bold text-xs uppercase tracking-wider transition-colors ${activeTab === "create"
+                            ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50/30"
+                            : "text-gray-400 hover:text-gray-600 hover:bg-gray-50"
+                            }`}
                     >
                         Report New
                     </button>
@@ -464,122 +403,72 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
             )}
 
             {/* MAIN CONTENT */}
-            <div className="flex-1 overflow-y-auto bg-gray-50">
-                {/* VIEW TAB */}
+            <div className="flex-1 overflow-y-auto bg-gray-50/50 p-4">
                 {activeTab === "view" && (
                     <div className="h-full">
                         {!selectedTicketId ? (
-                            <div className="p-4 space-y-4">
+                            <div className="space-y-4">
                                 {tickets.map((ticket) => (
                                     <div
                                         key={ticket.id}
                                         onClick={() => setSelectedTicketId(ticket.id)}
-                                        className="bg-white p-3 rounded-xl border border-gray-200 shadow-sm hover:shadow-md cursor-pointer group transition-all"
+                                        className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover:shadow-md hover:border-blue-300 cursor-pointer group transition-all"
                                     >
-                                        {/* FLEX CONTAINER: Vertical on mobile, Horizontal on large screens (>960px) */}
                                         <div className="flex flex-col min-[960px]:flex-row gap-3">
-                                            {/* 1. IMAGE SECTION (Left on Desktop) */}
                                             {ticket.photoUrl && (
-                                                <div className="shrink-0 w-full h-32 min-[960px]:w-28 min-[960px]:h-28 rounded-lg overflow-hidden border border-gray-100 bg-gray-50 relative">
-                                                    <img
-                                                        src={ticket.photoUrl}
-                                                        className="w-full h-full object-cover"
-                                                        alt="Preview"
-                                                    />
+                                                <div className="shrink-0 w-full h-32 min-[960px]:w-24 min-[960px]:h-24 rounded-lg overflow-hidden border border-gray-100 bg-gray-50 relative">
+                                                    <img src={ticket.photoUrl} className="w-full h-full object-cover" alt="Preview" />
                                                 </div>
                                             )}
-
-                                            {/* 2. CONTENT SECTION (Right on Desktop) */}
                                             <div className="flex-1 flex flex-col">
-                                                {/* Header: Category & Status */}
                                                 <div className="flex justify-between items-start mb-1">
                                                     <span className="text-[10px] px-2 py-0.5 rounded border font-bold uppercase bg-gray-50 text-gray-700 truncate max-w-[120px]">
                                                         {ticket.category}
                                                     </span>
-                                                    <span
-                                                        className={`text-xs font-bold shrink-0 ${
-                                                            ticket.status === "resolved"
-                                                                ? "text-green-600"
-                                                                : ticket.status === "in-progress"
-                                                                ? "text-blue-600"
-                                                                : ticket.status === "fake"
-                                                                ? "text-red-500"
-                                                                : "text-orange-500"
-                                                        }`}
-                                                    >
-                                                        {ticket.status.toUpperCase()}
+                                                    <span className={`text-[10px] font-bold uppercase ${ticket.status === 'resolved' ? 'text-green-600' :
+                                                        ticket.status === 'in-progress' ? 'text-blue-600' :
+                                                            ticket.status === 'fake' ? 'text-red-500' : 'text-orange-500'
+                                                        }`}>
+                                                        {ticket.status}
                                                     </span>
                                                 </div>
-
-                                                {/* Description (Truncated to 2 lines to keep list compact) */}
-                                                <p className="text-lg font-bold text-gray-800 mb-2 group-hover:text-blue-600 line-clamp-2 leading-snug">
+                                                <p className="text-sm font-bold text-gray-800 mb-2 group-hover:text-blue-600 line-clamp-2 leading-snug">
                                                     {ticket.description}
                                                 </p>
-
-                                                {/* Footer: User & Vote (Pushed to bottom) */}
                                                 <div className="mt-auto flex justify-between items-center pt-2 border-t border-gray-50">
-                                                    {/* User Info */}
-                                                    <span className="text-md text-gray-400 flex items-center gap-1.5">
-                                                        <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center">
-                                                            <User size={16} className="text-gray-400" />
-                                                        </div>
-                                                        <span className="truncate max-w-[100px]">Student</span>
+                                                    <span className="text-xs text-gray-400 flex items-center gap-1.5">
+                                                        <User size={14} /> Student
                                                     </span>
-
-                                                    {/* Vote Button */}
-                                                    <button
-                                                        disabled={
-                                                            !user ||
-                                                            ticket.status === "resolved" ||
-                                                            ticket.status === "fake"
-                                                        }
-                                                        onClick={(e) => handleUpvoteClick(e, ticket)}
-                                                        className={`flex items-center gap-1 px-3 py-1 rounded-lg text-md font-bold transition-all
-                            ${
-                                !user || ticket.status === "resolved" || ticket.status === "fake"
-                                    ? "bg-gray-50 text-gray-400 cursor-not-allowed"
-                                    : ticket.upvotes.includes(user.uid)
-                                    ? "bg-green-600 text-white shadow-md"
-                                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                            }
-                        `}
-                                                    >
-                                                        <ArrowBigUp
-                                                            size={16}
-                                                            className={
-                                                                ticket.upvotes.includes(user?.uid) ? "fill-current" : ""
-                                                            }
-                                                        />
-                                                        {ticket.voteCount || 0}
-                                                    </button>
+                                                    <div className="flex items-center gap-1 text-gray-500">
+                                                        <ArrowBigUp size={16} /> {ticket.voteCount || 0}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 ))}
                                 {tickets.length === 0 && (
-                                    <div className="text-center py-12 text-gray-400">No issues reported.</div>
+                                    <div className="text-center py-12 text-gray-400 flex flex-col items-center">
+                                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-3 text-gray-300">
+                                            <Sparkles size={24} />
+                                        </div>
+                                        <p className="font-bold text-sm">No issues here!</p>
+                                        <p className="text-xs mt-1">Be the first to report something.</p>
+                                    </div>
                                 )}
                             </div>
                         ) : (
-                            // DETAIL VIEW
                             selectedTicket && (
-                                <div className="bg-white min-h-full p-6 animate-fade-in pb-20">
+                                <div className="bg-white min-h-full pb-20 animate-fade-in">
                                     <div className="flex justify-between items-center mb-4">
                                         <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold uppercase tracking-wider border border-blue-100">
                                             {selectedTicket.category}
                                         </span>
-                                        <span
-                                            className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${
-                                                selectedTicket.status === "resolved"
-                                                    ? "bg-green-100 text-green-700 border-green-200"
-                                                    : selectedTicket.status === "in-progress"
-                                                    ? "bg-blue-100 text-blue-700 border-blue-200"
-                                                    : selectedTicket.status === "fake"
-                                                    ? "bg-red-100 text-red-700 border-red-200"
-                                                    : "bg-orange-100 text-orange-700 border-orange-200"
-                                            }`}
-                                        >
+                                        <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${selectedTicket.status === "resolved" ? "bg-green-100 text-green-700 border-green-200" :
+                                            selectedTicket.status === "in-progress" ? "bg-blue-100 text-blue-700 border-blue-200" :
+                                                selectedTicket.status === "fake" ? "bg-red-100 text-red-700 border-red-200" :
+                                                    "bg-orange-100 text-orange-700 border-orange-200"
+                                            }`}>
                                             {selectedTicket.status}
                                         </span>
                                     </div>
@@ -589,24 +478,19 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
                                     </h3>
 
                                     {selectedTicket.photoUrl && (
-                                        // CHANGED: Fixed height (h-64 or h-72) + Flex centering
-                                        // This ensures every ticket takes up the same amount of vertical space regardless of image aspect ratio
-                                        <div className="mb-6 rounded-xl overflow-hidden border border-gray-200 shadow-sm relative group bg-gray-100 h-96 flex items-center justify-center">
+                                        <div className="mb-6 rounded-xl overflow-hidden border border-gray-200 shadow-sm relative group bg-gray-100 h-64 flex items-center justify-center">
                                             <img
                                                 src={selectedTicket.photoUrl}
-                                                // CHANGED: max-w/max-h ensures it fits inside the box without stretching
                                                 className="max-w-full max-h-full object-contain"
                                                 alt="Issue"
                                             />
                                         </div>
                                     )}
 
-                                    {/* ANONYMOUS METADATA CARD */}
                                     <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 mb-6">
                                         <div className="flex justify-between items-center mb-3">
                                             <div className="flex items-center gap-3">
-                                                {/* Generic Avatar */}
-                                                <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 border-2 border-white shadow-sm">
+                                                <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-gray-500 border border-gray-200 shadow-sm">
                                                     <User size={18} />
                                                 </div>
                                                 <div>
@@ -616,141 +500,77 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
                                             </div>
                                             <div className="text-right">
                                                 <p className="text-xs font-bold text-gray-700">Status</p>
-                                                <p
-                                                    className={`text-xs font-bold uppercase ${
-                                                        selectedTicket.status === "resolved"
-                                                            ? "text-green-600"
-                                                            : "text-orange-500"
-                                                    }`}
-                                                >
+                                                <p className={`text-xs font-bold uppercase ${selectedTicket.status === "resolved" ? "text-green-600" : "text-orange-500"
+                                                    }`}>
                                                     {selectedTicket.status}
                                                 </p>
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-lg border border-gray-200 shadow-sm">
-                                            <ArrowBigUp size={14} className="text-green-500" />{" "}
-                                            <span className="font-bold text-xs">{selectedTicket.voteCount}</span>
+                                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white rounded-lg border border-gray-200 shadow-sm w-fit">
+                                            <ArrowBigUp size={14} className="text-green-500" />
+                                            <span className="font-bold text-xs">{selectedTicket.voteCount} Upvotes</span>
                                         </div>
                                     </div>
 
-                                    <div className="flex gap-3">
-                                        <button
-                                            disabled={
-                                                !user ||
-                                                selectedTicket.status === "resolved" ||
-                                                selectedTicket.status === "fake"
+                                    <button
+                                        disabled={!user || selectedTicket.status === 'resolved' || selectedTicket.status === 'fake'}
+                                        onClick={(e) => handleUpvoteClick(e, selectedTicket)}
+                                        className={`w-full py-3 rounded-xl font-bold shadow-sm flex justify-center items-center gap-2 transition-all
+                                            ${!user || selectedTicket.status === 'resolved' || selectedTicket.status === 'fake'
+                                                ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                                                : selectedTicket.upvotes.includes(user.uid)
+                                                    ? "bg-blue-600 text-white shadow-blue-200"
+                                                    : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
                                             }
-                                            onClick={(e) => handleUpvoteClick(e, selectedTicket)}
-                                            className={`flex-1 py-3 rounded-xl font-bold shadow-sm flex justify-center items-center gap-2 transition-all
-                                                ${
-                                                    !user ||
-                                                    selectedTicket.status === "resolved" ||
-                                                    selectedTicket.status === "fake"
-                                                        ? "bg-gray-100 text-gray-400 cursor-not-allowed" // Disabled Style
-                                                        : selectedTicket.upvotes.includes(user.uid)
-                                                        ? "bg-green-600 text-white shadow-blue-200"
-                                                        : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
-                                                }
-                                            `}
-                                        >
-                                            <ArrowBigUp
-                                                size={18}
-                                                className={
-                                                    // Check if user exists BEFORE accessing user.uid
-                                                    user && selectedTicket.upvotes.includes(user.uid)
-                                                        ? "fill-current"
-                                                        : ""
-                                                }
-                                            />
-                                            {selectedTicket.voteCount || 0} Upvotes
-                                        </button>
-                                    </div>
+                                        `}
+                                    >
+                                        <ArrowBigUp size={18} className={user && selectedTicket.upvotes.includes(user.uid) ? "fill-current" : ""} />
+                                        {user && selectedTicket.upvotes.includes(user.uid) ? "Upvoted" : "Upvote Issue"}
+                                    </button>
 
-                                    {/* === STAFF ACTIONS (Light UI) === */}
-                                    {(userData?.role === "staff" || userData?.role === "admin") &&
-                                        selectedTicket.status !== "fake" && (
-                                            <div className="mt-5 bg-gray-50 rounded-xl p-5 shadow-sm mb-6 border border-gray-200">
-                                                <div className="flex items-center gap-2 mb-4 border-b border-gray-200 pb-2">
-                                                    <Briefcase size={18} className="text-blue-600" />
-                                                    <span className="font-bold text-sm text-gray-700 tracking-wide">
-                                                        Staff Actions
-                                                    </span>
-                                                </div>
-
-                                                {/* Note Input */}
-                                                <textarea
-                                                    className="w-full bg-white border border-gray-300 rounded-lg p-3 text-sm text-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none mb-3 transition-colors"
-                                                    rows="2"
-                                                    placeholder="Add progress note or resolution details..."
-                                                    value={staffNote}
-                                                    onChange={(e) => setStaffNote(e.target.value)}
-                                                />
-
-                                                {/* Upload */}
-                                                <div className="flex items-center gap-3 mb-4">
-                                                    <label className="flex items-center gap-2 cursor-pointer bg-white border border-gray-300 hover:bg-gray-100 px-3 py-2 rounded-lg text-xs font-bold text-gray-700 transition-colors shadow-sm">
-                                                        <Camera size={14} />{" "}
-                                                        {staffFile ? "Change Proof" : "Upload Proof"}
-                                                        <input
-                                                            type="file"
-                                                            className="hidden"
-                                                            onChange={(e) => setStaffFile(e.target.files[0])}
-                                                            accept="image/*"
-                                                        />
-                                                    </label>
-                                                    {staffFile && (
-                                                        <span className="text-xs text-green-600 font-medium truncate max-w-[150px]">
-                                                            {staffFile.name}
-                                                        </span>
-                                                    )}
-                                                </div>
-
-                                                {/* Buttons */}
-                                                <div className="grid grid-cols-3 gap-2">
-                                                    <button
-                                                        onClick={() => initiateStaffAction("in-progress")}
-                                                        className="bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-xs font-bold flex flex-col items-center gap-1 transition-colors shadow-sm"
-                                                    >
-                                                        <Clock size={14} /> In Progress
-                                                    </button>
-                                                    <button
-                                                        onClick={() => initiateStaffAction("resolved")}
-                                                        className="bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg text-xs font-bold flex flex-col items-center gap-1 transition-colors shadow-sm"
-                                                    >
-                                                        <CheckCircle size={14} /> Resolve
-                                                    </button>
-                                                    <button
-                                                        onClick={() => initiateStaffAction("fake")}
-                                                        className="bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg text-xs font-bold flex flex-col items-center gap-1 transition-colors shadow-sm"
-                                                    >
-                                                        <XCircle size={14} /> Flag Fake
-                                                    </button>
-                                                </div>
+                                    {(userData?.role === "staff" || userData?.role === "admin") && selectedTicket.status !== "fake" && (
+                                        <div className="mt-8 bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+                                            <div className="flex items-center gap-2 mb-4 border-b border-gray-100 pb-2">
+                                                <Briefcase size={18} className="text-blue-600" />
+                                                <span className="font-bold text-sm text-gray-700 tracking-wide">
+                                                    Staff Actions
+                                                </span>
                                             </div>
-                                        )}
+                                            <textarea
+                                                className="w-full bg-gray-50 border border-gray-300 rounded-lg p-3 text-sm text-gray-800 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none mb-3 transition-colors"
+                                                rows="2"
+                                                placeholder="Add progress note or resolution details..."
+                                                value={staffNote}
+                                                onChange={(e) => setStaffNote(e.target.value)}
+                                            />
+                                            <div className="flex items-center gap-3 mb-4">
+                                                <label className="flex items-center gap-2 cursor-pointer bg-white border border-gray-300 hover:bg-gray-100 px-3 py-2 rounded-lg text-xs font-bold text-gray-700 transition-colors shadow-sm">
+                                                    <Camera size={14} /> {staffFile ? "Change Proof" : "Upload Proof"}
+                                                    <input type="file" className="hidden" onChange={(e) => setStaffFile(e.target.files[0])} accept="image/*" />
+                                                </label>
+                                                {staffFile && <span className="text-xs text-green-600 font-medium truncate max-w-[150px]">{staffFile.name}</span>}
+                                            </div>
+                                            <div className="grid grid-cols-3 gap-2">
+                                                <button onClick={() => initiateStaffAction("in-progress")} className="bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg text-xs font-bold flex flex-col items-center gap-1 shadow-sm"><Clock size={14} /> In Progress</button>
+                                                <button onClick={() => initiateStaffAction("resolved")} className="bg-green-600 hover:bg-green-700 text-white py-2 rounded-lg text-xs font-bold flex flex-col items-center gap-1 shadow-sm"><CheckCircle size={14} /> Resolve</button>
+                                                <button onClick={() => initiateStaffAction("fake")} className="bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg text-xs font-bold flex flex-col items-center gap-1 shadow-sm"><XCircle size={14} /> Flag Fake</button>
+                                            </div>
+                                        </div>
+                                    )}
 
-                                    {/* OFFICIAL UPDATE */}
                                     {(selectedTicket.staffNote || selectedTicket.resolutionImageUrl) && (
-                                        <div className="bg-green-50 border border-green-200 rounded-xl p-4 animate-fade-in">
+                                        <div className="bg-green-50 border border-green-200 rounded-xl p-4 animate-fade-in mt-6">
                                             <h4 className="text-xs font-bold text-green-800 uppercase tracking-wider mb-2 flex items-center gap-1">
                                                 <CheckCircle size={12} /> Official Update
                                             </h4>
-                                            {selectedTicket.staffNote && (
-                                                <p className="text-sm text-gray-800 mb-2">{selectedTicket.staffNote}</p>
-                                            )}
+                                            {selectedTicket.staffNote && <p className="text-sm text-gray-800 mb-2">{selectedTicket.staffNote}</p>}
                                             {selectedTicket.resolutionImageUrl && (
                                                 <div className="rounded-lg overflow-hidden border border-green-100">
-                                                    <img
-                                                        src={selectedTicket.resolutionImageUrl}
-                                                        className="w-full h-auto object-cover"
-                                                        alt="Resolution"
-                                                    />
+                                                    <img src={selectedTicket.resolutionImageUrl} className="w-full h-auto object-cover" alt="Resolution" />
                                                 </div>
                                             )}
                                             {selectedTicket.resolvedBy && (
-                                                <p className="text-[10px] text-green-600 mt-2 text-right">
-                                                    Updated by: {selectedTicket.resolvedBy.name}
-                                                </p>
+                                                <p className="text-[10px] text-green-600 mt-2 text-right">Updated by: {selectedTicket.resolvedBy.name}</p>
                                             )}
                                         </div>
                                     )}
@@ -760,80 +580,35 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
                     </div>
                 )}
 
-                {/* CREATE TAB */}
                 {activeTab === "create" && (
-                    <div className="p-4 space-y-4">
+                    <div className="p-1 space-y-4">
                         {!user && (
                             <div className="bg-red-50 border border-red-200 text-red-600 p-3 rounded-lg text-xs flex gap-2 items-center animate-pulse">
-                                <AlertTriangle size={16} className="shrink-0" />{" "}
-                                <span className="font-bold">Please sign in to file a complaint.</span>
+                                <AlertTriangle size={16} className="shrink-0" /> <span className="font-bold">Please sign in to file a complaint.</span>
                             </div>
                         )}
-
                         {showBlockedMsg && (
                             <div className="bg-red-50 border border-red-200 rounded-xl p-4 animate-fade-in">
-                                <div className="flex items-center gap-2 mb-2 text-red-800 font-bold">
-                                    <Ban size={20} />
-                                    <span>Upload Blocked</span>
-                                </div>
-                                <p className="text-xs text-gray-700 mb-3">
-                                    Reason:{" "}
-                                    <span className="font-bold">{aiReason.replace("Image appears to be: ", "")}</span>.
-                                </p>
-                                <button
-                                    onClick={() => {
-                                        setShowBlockedMsg(false);
-                                        setFile(null);
-                                    }}
-                                    className="w-full py-2 bg-white border border-gray-300 text-gray-700 rounded-lg text-xs font-bold"
-                                >
-                                    Try Again
-                                </button>
+                                <div className="flex items-center gap-2 mb-2 text-red-800 font-bold"><Ban size={20} /><span>Upload Blocked</span></div>
+                                <p className="text-xs text-gray-700 mb-3">Reason: <span className="font-bold">{aiReason.replace("Image appears to be: ", "")}</span>.</p>
+                                <button onClick={() => { setShowBlockedMsg(false); setFile(null); }} className="w-full py-2 bg-white border border-gray-300 text-gray-700 rounded-lg text-xs font-bold">Try Again</button>
                             </div>
                         )}
-
                         {showKarmaWarning && (
                             <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 animate-fade-in">
-                                <div className="flex items-center gap-2 mb-2 text-orange-800 font-bold">
-                                    <ShieldAlert size={20} />
-                                    <span>Karma Risk Warning</span>
-                                </div>
-                                <p className="text-xs text-gray-700 mb-3">
-                                    If Admins mark this as fake,{" "}
-                                    <span className="font-bold text-red-600">your Karma will decrease</span>.
-                                </p>
+                                <div className="flex items-center gap-2 mb-2 text-orange-800 font-bold"><ShieldAlert size={20} /><span>Karma Risk Warning</span></div>
+                                <p className="text-xs text-gray-700 mb-3">If Admins mark this as fake, <span className="font-bold text-red-600">your Karma will decrease</span>.</p>
                                 <div className="flex gap-2">
-                                    <button
-                                        onClick={() => setShowKarmaWarning(false)}
-                                        className="flex-1 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg text-xs font-bold"
-                                    >
-                                        Go Back
-                                    </button>
-                                    <button
-                                        onClick={finalizeSubmit}
-                                        className="flex-1 py-2 bg-orange-600 text-white rounded-lg text-xs font-bold hover:bg-orange-700 shadow-sm"
-                                    >
-                                        I Understand
-                                    </button>
+                                    <button onClick={() => setShowKarmaWarning(false)} className="flex-1 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg text-xs font-bold">Go Back</button>
+                                    <button onClick={finalizeSubmit} className="flex-1 py-2 bg-orange-600 text-white rounded-lg text-xs font-bold hover:bg-orange-700 shadow-sm">I Understand</button>
                                 </div>
                             </div>
                         )}
-
                         {!showBlockedMsg && !showKarmaWarning && (
-                            <form
-                                onSubmit={initiateSubmit}
-                                className={`space-y-4 ${!user ? "opacity-50 pointer-events-none" : ""}`}
-                            >
+                            <form onSubmit={initiateSubmit} className={`space-y-4 ${!user ? "opacity-50 pointer-events-none" : ""}`}>
                                 <div>
                                     <label className="block text-xs font-bold text-gray-700 mb-1.5">Category</label>
-                                    <select
-                                        className="w-full p-2.5 border border-gray-300 rounded-lg bg-white text-sm outline-none focus:border-blue-500"
-                                        value={category}
-                                        onChange={(e) => {
-                                            setCategory(e.target.value);
-                                            setShowBlockedMsg(false);
-                                        }}
-                                    >
+                                    <select className="w-full p-3 border border-gray-300 rounded-xl bg-white text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" value={category} onChange={(e) => { setCategory(e.target.value); setShowBlockedMsg(false); }}>
                                         <option value="Electrical">Electrical</option>
                                         <option value="Civil">Civil</option>
                                         <option value="Furniture">Furniture</option>
@@ -842,108 +617,38 @@ const TicketPanel = ({ room, onClose, initialTicketId }) => {
                                         <option value="Other">Other</option>
                                     </select>
                                 </div>
-
                                 {similarTickets.length > 0 && (
                                     <div className="bg-blue-50 border border-blue-100 rounded-lg p-3 animate-fade-in">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <Info size={16} className="text-blue-600" />
-                                            <span className="text-xs font-bold text-blue-800">
-                                                {similarTickets.length} active {category.toLowerCase()} issue(s):
-                                            </span>
-                                        </div>
+                                        <div className="flex items-center gap-2 mb-2"><Info size={16} className="text-blue-600" /><span className="text-xs font-bold text-blue-800">{similarTickets.length} active {category.toLowerCase()} issue(s):</span></div>
                                         <div className="space-y-2 max-h-32 overflow-y-auto pr-1">
                                             {similarTickets.map((ticket) => (
-                                                <div
-                                                    key={ticket.id}
-                                                    className="bg-white p-2 rounded border border-blue-100 flex justify-between items-center gap-3"
-                                                >
+                                                <div key={ticket.id} className="bg-white p-2 rounded border border-blue-100 flex justify-between items-center gap-3">
                                                     <div className="flex-1 overflow-hidden">
-                                                        <p className="text-[11px] text-gray-600 truncate">
-                                                            {ticket.description}
-                                                        </p>
-                                                        <span
-                                                            className={`text-[9px] font-bold uppercase ${
-                                                                ticket.status === "in-progress"
-                                                                    ? "text-blue-500"
-                                                                    : "text-orange-500"
-                                                            }`}
-                                                        >
-                                                            {ticket.status}
-                                                        </span>
+                                                        <p className="text-[11px] text-gray-600 truncate">{ticket.description}</p>
+                                                        <span className={`text-[9px] font-bold uppercase ${ticket.status === "in-progress" ? "text-blue-500" : "text-orange-500"}`}>{ticket.status}</span>
                                                     </div>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => handleJumpToTicket(ticket)}
-                                                        className="flex items-center gap-1 px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded text-[10px] font-bold transition-colors whitespace-nowrap"
-                                                    >
-                                                        View & Vote <ArrowUpRight size={10} />
-                                                    </button>
+                                                    <button type="button" onClick={() => handleJumpToTicket(ticket)} className="flex items-center gap-1 px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded text-[10px] font-bold transition-colors whitespace-nowrap">View & Vote <ArrowUpRight size={10} /></button>
                                                 </div>
                                             ))}
                                         </div>
                                     </div>
                                 )}
-
                                 <div>
                                     <label className="block text-xs font-bold text-gray-700 mb-1.5">Description</label>
-                                    <textarea
-                                        className="w-full p-3 border border-gray-300 rounded-lg bg-white text-sm outline-none focus:border-blue-500"
-                                        rows="4"
-                                        placeholder="Describe the issue..."
-                                        value={desc}
-                                        onChange={(e) => setDesc(e.target.value)}
-                                        required
-                                    />
+                                    <textarea className="w-full p-3 border border-gray-300 rounded-xl bg-white text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" rows="4" placeholder="Describe the issue..." value={desc} onChange={(e) => setDesc(e.target.value)} required />
                                 </div>
-
                                 <div>
-                                    <label className="block text-xs font-bold text-gray-700 mb-1.5">
-                                        Evidence{" "}
-                                        {STRICT_CATEGORIES.includes(category) && (
-                                            <span className="text-red-500">*</span>
-                                        )}
-                                    </label>
-                                    <div
-                                        className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer relative transition-colors ${
-                                            file ? "border-blue-400 bg-blue-50" : "border-gray-300 hover:bg-gray-100"
-                                        }`}
-                                    >
-                                        <input
-                                            type="file"
-                                            accept="image/*"
-                                            onChange={(e) => setFile(e.target.files[0])}
-                                            className="absolute inset-0 opacity-0 cursor-pointer z-10"
-                                        />
+                                    <label className="block text-xs font-bold text-gray-700 mb-1.5">Evidence {STRICT_CATEGORIES.includes(category) && <span className="text-red-500">*</span>}</label>
+                                    <div className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer relative transition-colors ${file ? "border-blue-400 bg-blue-50" : "border-gray-300 hover:bg-gray-50"}`}>
+                                        <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files[0])} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
                                         <div className="flex flex-col items-center gap-2 text-gray-500">
                                             <Camera size={24} className={file ? "text-blue-500" : "text-gray-400"} />
-                                            <span className="text-xs font-medium">
-                                                {file ? file.name : "Tap to upload"}
-                                            </span>
+                                            <span className="text-xs font-medium">{file ? file.name : "Tap to upload"}</span>
                                         </div>
                                     </div>
                                 </div>
-
-                                <button
-                                    type="submit"
-                                    disabled={!user || loading || isValidating}
-                                    className={`w-full py-3.5 rounded-xl font-bold shadow-lg flex justify-center items-center gap-2 transition-all ${
-                                        !user
-                                            ? "bg-gray-300 cursor-not-allowed text-gray-500"
-                                            : loading || isValidating
-                                            ? "bg-gray-400 cursor-wait text-white"
-                                            : "bg-blue-600 hover:bg-blue-700 text-white"
-                                    }`}
-                                >
-                                    {isValidating ? (
-                                        <>
-                                            {" "}
-                                            <Sparkles size={18} className="animate-spin" /> Verifying...{" "}
-                                        </>
-                                    ) : loading ? (
-                                        "Submitting..."
-                                    ) : (
-                                        "Submit Complaint"
-                                    )}
+                                <button type="submit" disabled={!user || loading || isValidating} className={`w-full py-3.5 rounded-xl font-bold shadow-lg flex justify-center items-center gap-2 transition-all ${!user ? "bg-gray-300 cursor-not-allowed text-gray-500" : loading || isValidating ? "bg-gray-400 cursor-wait text-white" : "bg-blue-600 hover:bg-blue-700 text-white"}`}>
+                                    {isValidating ? <><Sparkles size={18} className="animate-spin" /> Verifying... </> : loading ? "Submitting..." : "Submit Complaint"}
                                 </button>
                             </form>
                         )}

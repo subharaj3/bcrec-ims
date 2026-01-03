@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import {
-    User,
     Mail,
     Hash,
     BookOpen,
@@ -14,14 +13,15 @@ import {
     ArrowBigUp,
     ArrowUpRight,
     Calendar,
-    Ban
+    Ban,
+    LogOut
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { db } from "../services/firebase";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
 
 const ProfilePanel = ({ onClose, onNavigate }) => {
-    const { user, userData, completeProfile } = useAuth();
+    const { user, userData, completeProfile, logout } = useAuth();
     const [isEditing, setIsEditing] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [userTickets, setUserTickets] = useState([]);
@@ -75,6 +75,11 @@ const ProfilePanel = ({ onClose, onNavigate }) => {
         }
     };
 
+    const handleSignOut = async () => {
+        await logout();
+        onClose();
+    };
+
     if (!userData) return null;
 
     return (
@@ -82,7 +87,6 @@ const ProfilePanel = ({ onClose, onNavigate }) => {
 
             {/* === HEADER === */}
             <div className="bg-blue-600 p-6 text-white relative shrink-0">
-                {/* Close Button (Top-Right) */}
                 <button
                     onClick={onClose}
                     className="absolute top-4 right-4 p-1.5 hover:bg-blue-500 rounded-full transition-colors z-10"
@@ -91,15 +95,14 @@ const ProfilePanel = ({ onClose, onNavigate }) => {
                 </button>
 
                 <div className="flex items-center gap-4">
-                    {/* Avatar */}
+                    {/* Standard Profile Photo */}
                     <img
                         src={user.photoURL}
                         alt="Profile"
                         className="w-16 h-16 rounded-full border-4 border-blue-400 shadow-md object-cover bg-white"
                     />
 
-                    {/* Name & Role */}
-                    <div className="flex flex-col pr-8"> {/* Added padding-right to avoid hitting X */}
+                    <div className="flex flex-col pr-8">
                         <h3 className="font-bold text-lg leading-tight truncate max-w-[180px]">
                             {user.displayName}
                         </h3>
@@ -116,7 +119,6 @@ const ProfilePanel = ({ onClose, onNavigate }) => {
                     </div>
                 </div>
 
-                {/* Karma Display (Absolute Bottom-Right) */}
                 <div className={`absolute bottom-8 right-12 flex flex-col items-center justify-center px-3 py-1.5 rounded-xl border backdrop-blur-md shadow-lg transition-colors
                     ${(userData.karma ?? 100) <= 0
                         ? 'bg-red-500/30 border-red-400/50 text-red-50'
@@ -133,7 +135,6 @@ const ProfilePanel = ({ onClose, onNavigate }) => {
 
             {/* Scrollable Content Area */}
             <div className="overflow-y-auto flex-1 p-5">
-                {/* Email */}
                 <div className="flex items-center gap-3 mb-4 text-gray-500">
                     <Mail size={16} />
                     <span className="text-xs font-mono">{user.email}</span>
@@ -174,7 +175,6 @@ const ProfilePanel = ({ onClose, onNavigate }) => {
                                     <option>M.Tech</option>
                                     <option>BCA</option>
                                     <option>MCA</option>
-                                    {/* RESTRICTION: Only show this option if user is NOT a student */}
                                     {userData?.role !== 'student' && <option>Admin/Staff</option>}
                                 </select>
                             ) : (
@@ -209,7 +209,6 @@ const ProfilePanel = ({ onClose, onNavigate }) => {
                         </div>
                     </div>
 
-                    {/* Edit Buttons */}
                     <div className="pt-2">
                         {isEditing ? (
                             <div className="flex gap-2">
@@ -224,13 +223,7 @@ const ProfilePanel = ({ onClose, onNavigate }) => {
                                     disabled={isLoading}
                                     className="flex-1 py-1.5 text-xs font-bold text-white bg-green-600 hover:bg-green-700 rounded flex justify-center items-center gap-2"
                                 >
-                                    {isLoading ? (
-                                        <Loader2 size={12} className="animate-spin" />
-                                    ) : (
-                                        <>
-                                            <Save size={12} /> Save
-                                        </>
-                                    )}
+                                    {isLoading ? <Loader2 size={12} className="animate-spin" /> : <><Save size={12} /> Save</>}
                                 </button>
                             </div>
                         ) : (
@@ -246,7 +239,6 @@ const ProfilePanel = ({ onClose, onNavigate }) => {
 
                 <hr className="border-gray-100 mb-4" />
 
-                {/* --- TICKET HISTORY SECTION --- */}
                 <div>
                     <h4 className="text-xs font-bold text-gray-400 uppercase mb-3 flex items-center gap-1">
                         <Ticket size={12} /> My Contributions ({userTickets.length})
@@ -265,11 +257,9 @@ const ProfilePanel = ({ onClose, onNavigate }) => {
                                     className="bg-gray-50 border border-gray-200 rounded-lg p-3 hover:bg-blue-50 hover:border-blue-200 cursor-pointer transition-colors group"
                                 >
                                     <div className="flex justify-between items-start mb-1">
-                                        <span
-                                            className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase
-                      ${ticket.status === "resolved" ? "bg-green-100 text-green-700" : ticket.status === "fake" ? "bg-red-100 text-red-700" : "bg-orange-100 text-orange-700"}
-                    `}
-                                        >
+                                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded uppercase
+                                            ${ticket.status === "resolved" ? "bg-green-100 text-green-700" : ticket.status === "fake" ? "bg-red-100 text-red-700" : "bg-orange-100 text-orange-700"}
+                                        `}>
                                             {ticket.status}
                                         </span>
                                         <span className="text-[10px] text-gray-400 flex items-center gap-1">
@@ -293,6 +283,16 @@ const ProfilePanel = ({ onClose, onNavigate }) => {
                         )}
                     </div>
                 </div>
+            </div>
+
+            <div className="p-4 border-t border-gray-100 bg-gray-50 shrink-0">
+                <button
+                    onClick={handleSignOut}
+                    className="w-full py-3 bg-white border border-red-200 text-red-500 hover:bg-red-50 hover:border-red-300 rounded-xl font-bold shadow-sm transition-all flex items-center justify-center gap-2"
+                >
+                    <LogOut size={18} />
+                    Sign Out
+                </button>
             </div>
         </div>
     );

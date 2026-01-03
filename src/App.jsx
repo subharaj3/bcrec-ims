@@ -1,160 +1,178 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { useAuth } from "./context/AuthContext";
-import { Settings, LogOut } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import FloorMap from "./components/FloorMap";
 import TicketPanel from "./components/TicketPanel";
 import AdminMapEditor from "./components/AdminMapEditor";
 import ProfileSetup from "./components/ProfileSetup";
 import ProfilePanel from "./components/ProfilePanel";
+import SmartNavbar from "./components/SmartNavbar";
+import LeftSidebar from "./components/LeftSidebar";
 
 function App() {
-    const { user, userData, login, logout } = useAuth();
+    const { user, userData } = useAuth();
+    const mapRef = useRef(null);
 
-    // State
+    // UI State
     const [selectedRoom, setSelectedRoom] = useState(null);
     const [isPanelOpen, setIsPanelOpen] = useState(false);
     const [isAdminMode, setIsAdminMode] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
-
-    // Track specific ticket to focus on
     const [focusTicketId, setFocusTicketId] = useState(null);
+
+    // Layout State
+    const [isNavbarExpanded, setIsNavbarExpanded] = useState(false);
+    const [isLegendOpen, setIsLegendOpen] = useState(true);
 
     const handleRoomSelect = (room) => {
         if (!isAdminMode) {
             setSelectedRoom(room);
-            setFocusTicketId(null); // Clear focus if just clicking room
+            setFocusTicketId(null);
             setIsPanelOpen(true);
+            setIsNavbarExpanded(false);
         }
     };
 
-    const handleClosePanel = () => {
-        setIsPanelOpen(false);
-        setFocusTicketId(null);
-    };
-
-    // Handler for Profile Navigation
     const handleTicketNavigation = (ticket) => {
-        // Close Profile Panel
-        setIsProfileOpen(false);
-
-        // Set the Room (triggers Map Zoom via FloorMap useEffect)
-        // We construct a minimal room object since we might not have the full rect data here,
-        // but TicketPanel mainly needs ID and Label.
-        setSelectedRoom({
-            id: ticket.roomId,
-            label: ticket.roomName,
-        });
-
-        // Set the Ticket ID to highlight
-        setFocusTicketId(ticket.id);
-
-        // Open Panel
-        setIsPanelOpen(true);
+        if (!isAdminMode) {
+            setIsProfileOpen(false);
+            setSelectedRoom({ id: ticket.roomId, label: ticket.roomName });
+            setFocusTicketId(ticket.id);
+            setIsPanelOpen(true);
+            setIsNavbarExpanded(false);
+        }
     };
 
-    if (user && userData && !userData.isProfileComplete) {
-        return <ProfileSetup />;
-    }
+    const handleMapClick = () => {
+        setIsNavbarExpanded(false);
+        setIsLegendOpen(false);
+    };
+
+    const handleCenterMap = () => {
+        if (mapRef.current) mapRef.current.resetView();
+    };
+
+    if (user && userData && !userData.isProfileComplete) return <ProfileSetup />;
 
     return (
-        <div className="relative h-screen w-screen bg-gray-900 overflow-hidden">
-            {userData?.role === "admin" && (
+        <div className="flex h-screen w-screen bg-gray-100 overflow-hidden font-sans text-gray-900">
+
+            {!isAdminMode && (
+                <LeftSidebar
+                    onToggleLegend={() => setIsLegendOpen(!isLegendOpen)}
+                    isLegendOpen={isLegendOpen}
+                    onCenterMap={handleCenterMap}
+                    onAdminClick={() => setIsAdminMode(!isAdminMode)}
+                    isAdmin={userData?.role === "admin"}
+                    isAdminMode={isAdminMode}
+                />
+            )}
+
+            <div className={`flex-1 flex flex-col relative h-full transition-all duration-300
+                ${isAdminMode ? "ml-0 p-0 gap-0" : "ml-[80px] p-4 gap-4"}
+            `}>
+
+                {!isAdminMode && isLegendOpen && (
+                    <div className="absolute top-24 left-4 z-50 bg-white p-5 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-gray-200 w-60 animate-fade-in-right">
+                        <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 border-b border-gray-100 pb-2">Zone Guide</h4>
+                        <div className="space-y-3">
+                            <div className="flex items-center gap-3">
+                                <div className="w-5 h-5 bg-red-50 border-2 border-red-500 rounded-lg shadow-sm animate-pulse"></div>
+                                <span className="text-xs font-bold text-gray-700">Active Alert</span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <div className="w-5 h-5 bg-blue-50 border border-blue-400 rounded-lg shadow-sm"></div>
+                                <span className="text-xs font-bold text-gray-600">Labs & Depts</span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <div className="w-5 h-5 bg-green-50 border border-green-400 rounded-lg shadow-sm"></div>
+                                <span className="text-xs font-bold text-gray-600">Utility / Staff</span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <div className="w-5 h-5 bg-red-50 border border-red-300 rounded-lg shadow-sm"></div>
+                                <span className="text-xs font-bold text-gray-600">Classrooms</span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                                <div className="w-5 h-5 bg-gray-100 border border-gray-400 rounded-lg shadow-sm"></div>
+                                <span className="text-xs font-bold text-gray-600">Common Areas</span>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {!isAdminMode && (
+                    <SmartNavbar
+                        onOpenProfile={() => setIsProfileOpen(true)}
+                    />
+                )}
+
+                <div className={`flex-1 relative overflow-hidden bg-white transition-all duration-300
+                    ${isAdminMode
+                        ? "rounded-none border-none shadow-none mt-0"
+                        : "rounded-3xl border border-gray-300 shadow-xl mt-[80px]"
+                    }
+                `}>
+
+                    {isAdminMode ? (
+                        <div className="absolute inset-0 z-40 bg-white">
+                            <AdminMapEditor />
+                        </div>
+                    ) : (
+                        <>
+                            {/* Map Container */}
+                            <div
+                                className={`absolute top-0 left-0 bottom-0 bg-white transition-all duration-500 ease-[cubic-bezier(0.25,0.1,0.25,1)]
+                                    ${isPanelOpen ? "right-[500px]" : "right-0"}
+                                `}
+                                onClick={handleMapClick}
+                            >
+                                <FloorMap
+                                    ref={mapRef}
+                                    onRoomSelect={handleRoomSelect}
+                                    isPanelOpen={isPanelOpen}
+                                    selectedRoomId={selectedRoom?.id}
+                                />
+                            </div>
+
+                            {/* Ticket/Room Panel */}
+                            <div className={`absolute top-0 right-0 h-full w-[500px] bg-white border-l border-gray-200 shadow-[-10px_0_30px_rgba(0,0,0,0.05)] z-30 overflow-hidden rounded-l-3xl transition-transform duration-500 ease-[cubic-bezier(0.25,0.1,0.25,1)]
+                                ${isPanelOpen ? "translate-x-0" : "translate-x-full"}
+                            `}>
+                                <div className="w-full h-full flex flex-col">
+                                    {selectedRoom && (
+                                        <TicketPanel
+                                            room={selectedRoom}
+                                            onClose={() => {
+                                                setIsPanelOpen(false);
+                                                setSelectedRoom(null);
+                                                // Wait 600ms for panel to close, then re-center map in full view
+                                                setTimeout(() => handleCenterMap(), 600);
+                                            }}
+                                            initialTicketId={focusTicketId}
+                                        />
+                                    )}
+                                </div>
+                            </div>
+                        </>
+                    )}
+                </div>
+            </div>
+
+            {isAdminMode && (
                 <button
-                    onClick={() => setIsAdminMode(!isAdminMode)}
-                    className={`absolute bottom-6 left-6 z-50 p-3 rounded-full shadow-xl transition-all border border-gray-700
-                        ${isAdminMode
-                            ? "bg-red-600 text-white hover:bg-red-700"
-                            : "bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white"
-                        }
-                    `}
-                    title={isAdminMode ? "Exit Editor" : "Open Map Editor"}
+                    onClick={() => setIsAdminMode(false)}
+                    className="fixed bottom-6 left-6 z-[60] p-4 bg-white text-gray-800 rounded-2xl shadow-2xl border border-gray-200 hover:bg-gray-50 hover:text-blue-600 hover:scale-105 transition-all active:scale-95 group"
+                    title="Exit Map Editor"
                 >
-                    <Settings size={24} />
+                    <ArrowLeft size={28} className="group-hover:-translate-x-1 transition-transform" />
                 </button>
             )}
 
-            {isAdminMode ? (
-                <div className="w-full h-full bg-white z-40">
-                    <AdminMapEditor />
-                </div>
-            ) : (
-                <div className="flex h-full w-full">
-                    <div className="flex-1 min-w-0 relative flex flex-col h-full transition-all duration-500 ease-in-out">
-                        <div className="absolute top-4 right-4 z-50 pointer-events-auto flex items-center gap-2">
-                            {user ? (
-                                <>
-                                    <div
-                                        onClick={() => setIsProfileOpen(!isProfileOpen)}
-                                        className={`flex items-center gap-3 bg-white/90 backdrop-blur p-1.5 pl-3 rounded-full shadow-lg border cursor-pointer transition-all hover:bg-white
-                                            ${isProfileOpen
-                                                ? "border-blue-500 ring-2 ring-blue-100"
-                                                : "border-gray-200"
-                                            }
-                                        `}
-                                    >
-                                        <div className="flex flex-col items-end">
-                                            <span className="text-xs font-bold text-gray-700 leading-none">
-                                                {user.displayName.split(" ")[0]}
-                                            </span>
-                                            <span className="text-[10px] text-gray-400 font-medium">
-                                                {userData?.stream || "Student"}
-                                            </span>
-                                        </div>
-                                        <img
-                                            src={user.photoURL}
-                                            alt="User"
-                                            className="w-8 h-8 rounded-full border border-gray-200"
-                                        />
-                                    </div>
-
-                                    <button
-                                        onClick={logout}
-                                        className="bg-red-50 hover:bg-red-100 text-red-500 p-2.5 rounded-full transition-colors shadow-lg border border-red-100"
-                                    >
-                                        <LogOut size={16} />
-                                    </button>
-
-                                    {/* Pass Navigation Handler */}
-                                    {isProfileOpen && (
-                                        <ProfilePanel
-                                            onClose={() => setIsProfileOpen(false)}
-                                            onNavigate={handleTicketNavigation}
-                                        />
-                                    )}
-                                </>
-                            ) : (
-                                <button
-                                    onClick={login}
-                                    className="bg-blue-600 text-white px-5 py-2.5 rounded-full shadow-lg font-bold text-xs hover:bg-blue-700 transition-all transform hover:-translate-y-0.5"
-                                >
-                                    Sign in with Google
-                                </button>
-                            )}
-                        </div>
-
-                        <FloorMap
-                            onRoomSelect={handleRoomSelect}
-                            isPanelOpen={isPanelOpen}
-                            selectedRoomId={selectedRoom?.id}
-                        />
-                    </div>
-
-                    <div
-                        className={`h-full bg-white relative z-40 shadow-2xl overflow-hidden transition-[width] duration-500 ease-in-out border-l border-gray-200 ${isPanelOpen ? "w-[40vw]" : "w-0 border-none"
-                            }`}
-                    >
-                        <div className="w-[40vw] h-full">
-                            {/* Pass Focus ID */}
-                            {selectedRoom && (
-                                <TicketPanel
-                                    room={selectedRoom}
-                                    onClose={handleClosePanel}
-                                    initialTicketId={focusTicketId}
-                                />
-                            )}
-                        </div>
-                    </div>
-                </div>
+            {isProfileOpen && (
+                <ProfilePanel
+                    onClose={() => setIsProfileOpen(false)}
+                    onNavigate={handleTicketNavigation}
+                />
             )}
         </div>
     );
