@@ -21,7 +21,7 @@ const FloorMap = forwardRef(({ onRoomSelect, isPanelOpen, selectedRoomId }, ref)
                 const { centerView } = transformComponentRef.current;
                 centerView(INITIAL_SCALE, 1000, "easeOutQuad");
             }
-        }
+        },
     }));
 
     // 1. Fetch Room Coordinates
@@ -30,7 +30,9 @@ const FloorMap = forwardRef(({ onRoomSelect, isPanelOpen, selectedRoomId }, ref)
             try {
                 const dbRooms = await getMapLayout();
                 if (dbRooms && dbRooms.length > 0) setRooms(dbRooms);
-            } catch (error) { console.error("Using fallback map data"); }
+            } catch (error) {
+                console.error("Using fallback map data");
+            }
         };
         fetchRooms();
     }, []);
@@ -38,6 +40,7 @@ const FloorMap = forwardRef(({ onRoomSelect, isPanelOpen, selectedRoomId }, ref)
     // 2. Listen for Heatmap Data
     useEffect(() => {
         const unsubscribe = subscribeToHeatmap((counts) => {
+            console.log("Setting ticket count");
             setTicketCounts(counts);
         });
         return () => unsubscribe();
@@ -47,7 +50,7 @@ const FloorMap = forwardRef(({ onRoomSelect, isPanelOpen, selectedRoomId }, ref)
     useEffect(() => {
         if (selectedRoomId && transformComponentRef.current) {
             const { zoomToElement } = transformComponentRef.current;
-            const delay = (!wasPanelOpen.current && isPanelOpen) ? 600 : 0;
+            const delay = !wasPanelOpen.current && isPanelOpen ? 600 : 0;
 
             setTimeout(() => {
                 zoomToElement(selectedRoomId, 3, 800, "easeOutQuad");
@@ -65,7 +68,9 @@ const FloorMap = forwardRef(({ onRoomSelect, isPanelOpen, selectedRoomId }, ref)
 
     // === RESTORED STYLING LOGIC (From your uploaded file) ===
     const getRoomStyle = (room, isSelected) => {
-        const count = ticketCounts[room.id] || 0;
+        const normalizedId = room.id.toLowerCase().trim();
+        const count = ticketCounts[normalizedId] || 0;
+        console.log(normalizedId);
         const colorType = room.color || "blue";
 
         let classes = "cursor-pointer transition-all duration-300 ease-in-out ";
@@ -104,16 +109,16 @@ const FloorMap = forwardRef(({ onRoomSelect, isPanelOpen, selectedRoomId }, ref)
             classes += "animate-selection-glow ";
             // Using your specific RGBA glow colors
             if (count <= 2) {
-                classes += "[--glow-intensity:10px] [--glow-color:rgba(248,113,113,0.7)] ";
+                classes += "[--glow-intensity:20px] [--glow-color:rgba(248,113,113,0.7)] ";
             } else if (count <= 5) {
-                classes += "[--glow-intensity:22px] [--glow-color:rgba(239,68,68,0.8)] ";
+                classes += "[--glow-intensity:60px] [--glow-color:rgba(239,68,68,0.8)] ";
             } else {
-                classes += "[--glow-intensity:40px] [--glow-color:rgba(185,28,28,1)] ";
+                classes += "[--glow-intensity:80px] [--glow-color:rgba(185,28,28,1)] ";
             }
             classes += `${strokeStyles[colorType] || strokeStyles.default} stroke-[1px] `;
         } else {
             // Default Stroke logic
-            classes += `${strokeStyles[colorType] || strokeStyles.default} stroke-[${isSelected ? '2px' : '1px'}] `;
+            classes += `${strokeStyles[colorType] || strokeStyles.default} stroke-[${isSelected ? "2px" : "1px"}] `;
         }
 
         return classes;
@@ -128,7 +133,7 @@ const FloorMap = forwardRef(({ onRoomSelect, isPanelOpen, selectedRoomId }, ref)
     };
 
     return (
-        <div className="w-full h-full bg-[#101828] flex items-center justify-center relative overflow-hidden">
+        <div className="w-full h-full flex items-center justify-center relative overflow-hidden">
             <TransformWrapper
                 initialScale={INITIAL_SCALE}
                 minScale={0.1}
@@ -139,9 +144,16 @@ const FloorMap = forwardRef(({ onRoomSelect, isPanelOpen, selectedRoomId }, ref)
                 ref={transformComponentRef}
             >
                 <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }}>
-                    <div style={{ width: `${MAP_WIDTH}px`, height: `${MAP_HEIGHT}px` }} className="relative bg-[#101828] shadow-2xl rounded-sm">
+                    <div
+                        style={{ width: `${MAP_WIDTH}px`, height: `${MAP_HEIGHT}px` }}
+                        className="relative bg-[#101828] shadow-2xl rounded-sm"
+                    >
                         {/* Map Image */}
-                        <img src="/Floorplan.jpg" alt="Map" className="w-full h-full object-contain pointer-events-none select-none" />
+                        <img
+                            src="/Floorplan.jpg"
+                            alt="Map"
+                            className="w-full h-full object-contain pointer-events-none select-none"
+                        />
 
                         {/* Interactive SVG Overlay */}
                         <svg viewBox={`0 0 ${MAP_WIDTH} ${MAP_HEIGHT}`} className="absolute top-0 left-0 w-full h-full">
@@ -169,7 +181,10 @@ const FloorMap = forwardRef(({ onRoomSelect, isPanelOpen, selectedRoomId }, ref)
                                             textAnchor="middle"
                                             dominantBaseline="middle"
                                             className="pointer-events-none select-none fill-slate-800 font-bold opacity-75"
-                                            style={{ fontSize: "20px", textShadow: "0px 0px 4px rgba(255,255,255,0.8)" }}
+                                            style={{
+                                                fontSize: "20px",
+                                                textShadow: "0px 0px 4px rgba(255,255,255,0.8)",
+                                            }}
                                         >
                                             {lines.map((line, index) => (
                                                 <tspan key={index} x={centerX} dy={index === 0 ? 0 : lineHeight}>

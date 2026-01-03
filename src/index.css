@@ -36,6 +36,25 @@ body {
     }
 }
 
-.animate-selection-glow {
-    animation: selected-glow-pulse 2s infinite ease-in-out;
+@layer utilities {
+    @keyframes selectionGlow {
+
+        0%,
+        100% {
+            /* Start/End with a small, faint glow */
+            filter: drop-shadow(0 0 2px var(--glow-color));
+            stroke-width: 1px;
+        }
+
+        50% {
+            /* Peak with a large, intense glow */
+            filter: drop-shadow(0 0 var(--glow-intensity) var(--glow-color));
+            stroke-width: 2px;
+        }
+    }
+
+    .animate-selection-glow {
+        /* Run the animation infinitely over 2 seconds */
+        animation: selectionGlow 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
+    }
 }

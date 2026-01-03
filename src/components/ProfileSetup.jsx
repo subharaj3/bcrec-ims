@@ -40,7 +40,7 @@ const ProfileSetup = () => {
     };
 
     return (
-        <div className="fixed inset-0 z-[60] bg-gray-900/90 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-60 bg-gray-900/90 backdrop-blur-sm flex items-center justify-center p-4">
             <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-fade-in">
                 {/* Header */}
                 <div className="bg-blue-600 p-6 text-white text-center">

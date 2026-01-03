@@ -106,10 +106,10 @@ function App() {
                     />
                 )}
 
-                <div className={`flex-1 relative overflow-hidden bg-white transition-all duration-300
+                <div className={`flex-1 relative overflow-hidden transition-all duration-300
                     ${isAdminMode
                         ? "rounded-none border-none shadow-none mt-0"
-                        : "rounded-3xl border border-gray-300 shadow-xl mt-[80px]"
+                        : "rounded-3xl mt-[80px]"
                     }
                 `}>
 
@@ -121,7 +121,7 @@ function App() {
                         <>
                             {/* Map Container */}
                             <div
-                                className={`absolute top-0 left-0 bottom-0 bg-white transition-all duration-500 ease-[cubic-bezier(0.25,0.1,0.25,1)]
+                                className={`absolute top-0 left-0 bottom-0 transition-all duration-500 ease-[cubic-bezier(0.25,0.1,0.25,1)]
                                     ${isPanelOpen ? "right-[500px]" : "right-0"}
                                 `}
                                 onClick={handleMapClick}
