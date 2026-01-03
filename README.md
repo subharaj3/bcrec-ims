@@ -1,10 +1,10 @@
-# 🏫 BCREC INFRASTRUCTURE MANAGEMENT SYSTEM (BCREC-IMS)
+# BCREC INFRASTRUCTURE MANAGEMENT SYSTEM (BCREC-IMS)
 > **Hack Zenith 2025 Submission** | *Smart Campus Infrastructure Monitoring*
 
-## 💡 The Problem
+## The Problem
 College campuses are complex ecosystems. When equipment breaks (e.g., a broken AC in Room TF-03 or a leaking pipe in the hallway), reporting it is often tedious. Emails get lost, locations are vague, and students have no visibility into whether a problem is being fixed.
 
-## 🚀 The Solution
+## The Solution
 **CCMS** is a "Digital Twin" solution for campus infrastructure. Instead of filling out boring forms, we mapped the entire college floor plan into an **Interactive Web Interface**.
 
 *   **For Students:** Click the specific room on the map, snap a photo, and verify it with AI.
@@ -12,7 +12,7 @@ College campuses are complex ecosystems. When equipment breaks (e.g., a broken A
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 ### Frontend
 *   ![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB) **React (Vite):** Fast, modern UI framework.
@@ -28,25 +28,25 @@ College campuses are complex ecosystems. When equipment breaks (e.g., a broken A
 
 ---
 
-## ✨ Key Features
+## Key Features
 
-### 🗺️ 1. Interactive Floor Map (Milestone 1 - Completed)
+### 1. Interactive Floor Map (Milestone 1 - Completed)
 *   **Zoom & Pan:** Infinite canvas navigation (similar to Google Maps).
 *   **Vector Overlays:** Precision-mapped click targets for every classroom, lab, and corridor.
 *   **Responsive:** Works on large monitors and laptops.
 
-### 🔧 2. Built-in Map Editor (Admin Tool)
+### 2. Built-in Map Editor (Admin Tool)
 *   We built a custom **Visual Editor** to avoid hardcoding coordinates.
 *   Admins can **Drag, Resize, and Name** rooms directly on the UI.
 *   One-click export to generate the JSON geometry data.
 
-### 📊 3. Real-time Complaint Tracking (In Progress)
+### 3. Real-time Complaint Tracking (In Progress)
 *   Visual status indicators (Red/Green/Yellow).
 *   Upvote system for prioritizing urgent repairs.
 
 ---
 
-## ⚡ Getting Started
+## Getting Started
 
 Follow these steps to run the project locally.
 
@@ -77,7 +77,7 @@ Follow these steps to run the project locally.
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```text
 src/
