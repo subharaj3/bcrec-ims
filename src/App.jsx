@@ -73,7 +73,7 @@ function App() {
             `}>
 
                 {!isAdminMode && isLegendOpen && (
-                    <div className="absolute top-24 left-4 z-50 bg-white p-5 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-gray-200 w-60 animate-fade-in-right">
+                    <div className="absolute top-30 left-10 z-50 bg-white p-5 rounded-2xl shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-gray-200 w-60 animate-fade-in-right">
                         <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 border-b border-gray-100 pb-2">Zone Guide</h4>
                         <div className="space-y-3">
                             <div className="flex items-center gap-3">
